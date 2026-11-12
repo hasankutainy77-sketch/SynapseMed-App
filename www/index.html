@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#0b1220">
+<title>SynapseMed</title>
+
+<style>
+:root {
+  --bg: #0b1220;
+  --card: #121e30;
+  --card2: #17263b;
+  --teal: #21c7b7;
+  --text: #f2f6fc;
+  --muted: #91a3b8;
+  --border: rgba(255,255,255,.08);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: Arial, sans-serif;
+  min-height: 100vh;
+}
+
+header {
+  padding: 25px 20px 20px;
+  background: linear-gradient(145deg,#14283d,#0b1220);
+  border-bottom: 1px solid var(--border);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.logo {
+  width: 48px;
+  height: 48px;
+  border-radius: 15px;
+  background: linear-gradient(135deg,#21c7b7,#087c89);
+  display: grid;
+  place-items: center;
+  font-size: 25px;
+  box-shadow: 0 5px 20px #21c7b733;
+}
+
+.brand h1 {
+  font-size: 23px;
+  letter-spacing: .5px;
+}
+
+.brand p {
+  color: var(--muted);
+  font-size: 12px;
+  margin-top: 4px;
+}
+
+.hero {
+  padding: 25px 20px;
+}
+
+.hero h2 {
+  font-size: 23px;
+  margin-bottom: 9px;
+}
+
+.hero h2 span {
+  color: var(--teal);
+}
+
+.hero p {
+  color: var(--muted);
+  line-height: 1.8;
+  font-size: 14px;
+}
+
+.status {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  background: #123b39;
+  color: #5ee4d5;
+  border: 1px solid #1c625b;
+  padding: 8px 13px;
+  border-radius: 30px;
+  font-size: 12px;
+  margin-top: 17px;
+}
+
+.dot {
+  width: 7px;
+  height: 7px;
+  background: #40dfaa;
+  border-radius: 50%;
+}
+
+main {
+  padding: 5px 18px 100px;
+}
+
+.section-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 15px 0;
+}
+
+.section-title h3 {
+  font-size: 17px;
+}
+
+.section-title span {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.search {
+  width: 100%;
+  padding: 14px 16px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 13px;
+  color: white;
+  font-size: 14px;
+  outline: none;
+  margin-bottom: 17px;
+}
+
+.search:focus {
+  border-color: var(--teal);
+}
+
+.filters {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 15px;
+  scrollbar-width: none;
+}
+
+.filter {
+  white-space: nowrap;
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--muted);
+  padding: 9px 14px;
+  border-radius: 25px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.filter.active {
+  background: #16413e;
+  color: #5ee4d5;
+  border-color: #277e74;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.sim-card {
+  position: relative;
+  min-height: 190px;
+  padding: 16px 13px;
+  background: linear-gradient(150deg,var(--card2),var(--card));
+  border: 1px solid var(--border);
+  border-radius: 17px;
+  display: flex;
+  flex-direction: column;
+  cursor: pointer;
+  transition: .2s;
+}
+
+.sim-card:active {
+  transform: scale(.97);
+}
+
+.sim-icon {
+  width: 47px;
+  height: 47px;
+  display: grid;
+  place-items: center;
+  background: #1c384b;
+  border-radius: 14px;
+  font-size: 25px;
+  margin-bottom: 13px;
+}
+
+.sim-card h4 {
+  font-size: 14px;
+  line-height: 1.6;
+  margin-bottom: 7px;
+}
+
+.sim-card p {
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.6;
+  flex-grow: 1;
+}
+
+.sim-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 13px;
+}
+
+.sim-type {
+  color: var(--teal);
+  font-size: 10px;
+}
+
+.open-arrow {
+  color: var(--teal);
+  font-size: 19px;
+}
+
+.empty {
+  grid-column: 1/-1;
+  text-align: center;
+  color: var(--muted);
+  padding: 40px 10px;
+}
+
+footer {
+  position: fixed;
+  bottom: 0;
+  width: 100%;
+  background: rgba(11,18,32,.96);
+  border-top: 1px solid var(--border);
+  padding: 13px 10px;
+  display: flex;
+  justify-content: space-around;
+  backdrop-filter: blur(15px);
+}
+
+footer button {
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-size: 11px;
+  cursor: pointer;
+}
+
+footer button span {
+  display: block;
+  font-size: 20px;
+  margin-bottom: 5px;
+}
+
+footer button.active {
+  color: var(--teal);
+}
+
+@media (max-width: 350px) {
+  .grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+
+<body>
+
+<header>
+  <div class="brand">
+    <div class="logo">✚</div>
+    <div>
+      <h1>SynapseMed</h1>
+      <p>Medical Simulation Platform</p>
+    </div>
+  </div>
+</header>
+
+<section class="hero">
+  <h2>تعلم الطب <span>بالتجربة</span></h2>
+  <p>
+    بيئة تعليمية تفاعلية لمحاكاة الحالات السريرية
+    والإجراءات الطبية والعمليات الجراحية.
+  </p>
+  <div class="status">
+    <span class="dot"></span>
+    المنصة جاهزة للعمل
+  </div>
+</section>
+
+<main>
+
+  <div class="section-title">
+    <h3>المحاكيات الطبية</h3>
+    <span id="count">4 محاكيات</span>
+  </div>
+
+  <input
+    id="search"
+    class="search"
+    type="search"
+    placeholder="ابحث عن محاكاة طبية..."
+  >
+
+  <div class="filters">
+    <button class="filter active" data-category="all">الكل</button>
+    <button class="filter" data-category="surgery">الجراحة</button>
+    <button class="filter" data-category="clinical">الحالات السريرية</button>
+    <button class="filter" data-category="emergency">الطوارئ</button>
+    <button class="filter" data-category="3d">ثلاثية الأبعاد</button>
+  </div>
+
+  <div class="grid" id="simulators"></div>
+
+</main>
+
+<footer>
+  <button class="active">
+    <span>⌂</span>
+    الرئيسية
+  </button>
+  <button id="favoritesBtn">
+    <span>♡</span>
+    المفضلة
+  </button>
+  <button id="aboutBtn">
+    <span>ⓘ</span>
+    حول التطبيق
+  </button>
+</footer>
+
+<script>
+const simulators = [
+  {
+    id: "clinical",
+    title: "حالة سريرية: ألم بطني حاد",
+    description: "تقييم مريض يعاني من ألم بطني والتوصل إلى التشخيص.",
+    icon: "🩺",
+    category: "clinical",
+    type: "حالة سريرية",
+    file: "simulators/clinical-sim.html"
+  },
+  {
+    id: "appendectomy",
+    title: "استئصال الزائدة الدودية",
+    description: "محاكاة تفاعلية لخطوات استئصال الزائدة الدودية.",
+    icon: "🔬",
+    category: "surgery",
+    type: "جراحة 2D",
+    file: "simulators/appendectomy-sim.html"
+  },
+  {
+    id: "appendectomy3d",
+    title: "استئصال الزائدة بالمنظار",
+    description: "استكشاف تشريحي ومحاكاة جراحية ثلاثية الأبعاد.",
+    icon: "🧊",
+    category: "3d",
+    type: "محاكاة 3D",
+    file: "simulators/appendectomy-3d.html"
+  },
+  {
+    id: "pneumothorax",
+    title: "استرواح الصدر الضاغط",
+    description: "محاكاة تشخيص وتدبير حالة إسعافية صدرية.",
+    icon: "🫁",
+    category: "emergency",
+    type: "طوارئ",
+    file: "simulators/pneumothorax-sim.html"
+  }
+];
+
+const container = document.getElementById("simulators");
+const search = document.getElementById("search");
+const count = document.getElementById("count");
+
+let selectedCategory = "all";
+let favoritesOnly = false;
+
+function getFavorites() {
+  try {
+    return JSON.parse(localStorage.getItem("synapse_favorites") || "[]");
+  } catch {
+    return [];
+  }
+}
+
+function render() {
+  const query = search.value.trim().toLowerCase();
+  const favorites = getFavorites();
+
+  const filtered = simulators.filter(sim => {
+    const matchesCategory =
+      selectedCategory === "all" ||
+      sim.category === selectedCategory;
+
+    const matchesSearch =
+      sim.title.toLowerCase().includes(query) ||
+      sim.description.toLowerCase().includes(query);
+
+    const matchesFavorite =
+      !favoritesOnly || favorites.includes(sim.id);
+
+    return matchesCategory && matchesSearch && matchesFavorite;
+  });
+
+  count.textContent = filtered.length + " محاكيات";
+
+  container.replaceChildren();
+
+  if (!filtered.length) {
+    const empty = document.createElement("div");
+    empty.className = "empty";
+    empty.textContent = "لا توجد محاكيات مطابقة للبحث.";
+    container.appendChild(empty);
+    return;
+  }
+
+  filtered.forEach(sim => {
+    const card = document.createElement("article");
+    card.className = "sim-card";
+
+    const icon = document.createElement("div");
+    icon.className = "sim-icon";
+    icon.textContent = sim.icon;
+
+    const title = document.createElement("h4");
+    title.textContent = sim.title;
+
+    const description = document.createElement("p");
+    description.textContent = sim.description;
+
+    const footer = document.createElement("div");
+    footer.className = "sim-footer";
+
+    const type = document.createElement("span");
+    type.className = "sim-type";
+    type.textContent = sim.type;
+
+    const arrow = document.createElement("span");
+    arrow.className = "open-arrow";
+    arrow.textContent = "←";
+
+    footer.append(type, arrow);
+    card.append(icon, title, description, footer);
+
+    card.addEventListener("click", () => {
+      window.location.href = sim.file;
+    });
+
+    container.appendChild(card);
+  });
+}
+
+search.addEventListener("input", render);
+
+document.querySelectorAll(".filter").forEach(button => {
+  button.addEventListener("click", () => {
+    document.querySelectorAll(".filter").forEach(b =>
+      b.classList.remove("active")
+    );
+
+    button.classList.add("active");
+    selectedCategory = button.dataset.category;
+    favoritesOnly = false;
+    render();
+  });
+});
+
+document.getElementById("favoritesBtn").addEventListener("click", () => {
+  favoritesOnly = !favoritesOnly;
+
+  document.getElementById("favoritesBtn")
+    .classList.toggle("active", favoritesOnly);
+
+  render();
+});
+
+document.getElementById("aboutBtn").addEventListener("click", () => {
+  alert("SynapseMed\nInteractive Medical Simulation Platform\nVersion 1.0.0");
+});
+
+render();
+</script>
+
+</body>
+  </html>
