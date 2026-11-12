@@ -9,6 +9,7 @@ if (!db) {
 }
 
 const style = document.createElement("style");
+
 style.textContent = `
     #adminStudentsButton {
         position: fixed;
@@ -135,7 +136,9 @@ panel.id = "adminStudentsPanel";
 panel.innerHTML = `
     <div class="admin-panel-header">
         <h2>إدارة طلبات الطلاب</h2>
-        <button class="admin-close" id="adminClosePanel">إغلاق ✕</button>
+        <button class="admin-close" id="adminClosePanel">
+            إغلاق ✕
+        </button>
     </div>
 
     <button class="admin-refresh" id="adminRefresh">
@@ -173,7 +176,7 @@ async function loadStudents() {
     );
 
     if (error) {
-        console.error(error);
+        console.error("Admin students error:", error);
 
         list.innerHTML = `
             <p class="admin-message">
@@ -247,7 +250,7 @@ async function reviewStudent(userId, status) {
     );
 
     if (error) {
-        console.error(error);
+        console.error("Review student error:", error);
         alert("تعذر تنفيذ العملية. يرجى المحاولة مجدداً.");
         buttons.forEach(btn => btn.disabled = false);
         return;
@@ -290,27 +293,42 @@ panel.querySelector("#adminRefresh").addEventListener(
     loadStudents
 );
 
-async function initializeAdminPanel() {
-    if (!window.SynapseAuth) return;
+// هذه الدالة يمكن استدعاؤها بعد تسجيل الدخول أو الخروج.
+async function refreshAdminVisibility() {
+    try {
+        if (!window.SynapseAuth) {
+            button.style.display = "none";
+            return;
+        }
 
-    const result = await window.SynapseAuth.checkSession();
+        const result = await window.SynapseAuth.checkSession();
 
-    if (
-        result.authenticated &&
-        result.approved &&
-        result.role === "admin"
-    ) {
-        button.style.display = "block";
+        const isAdmin =
+            result.authenticated &&
+            result.approved &&
+            result.role === "admin";
+
+        button.style.display = isAdmin ? "block" : "none";
+
+        if (!isAdmin) {
+            panel.style.display = "none";
+        }
+
+    } catch (error) {
+        console.error("Admin visibility check failed:", error);
+        button.style.display = "none";
+        panel.style.display = "none";
     }
 }
 
-if (document.readyState === "loading") {
-    document.addEventListener(
-        "DOMContentLoaded",
-        initializeAdminPanel
-    );
-} else {
-    initializeAdminPanel();
-}
+// نجعل الدالة متاحة لملف index.html.
+window.SynapseAdmin = {
+    refresh: refreshAdminVisibility
+};
+
+// الفحص الأول عند تحميل التطبيق.
+refreshAdminVisibility();
+
+console.log("SynapseMed Admin Panel loaded.");
 
 })();
