@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>محاكي الحالات السريرية</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;600;700&display=swap">
+<style>
+:root{--bg:#EDF2F1;--ink:#142428;--mut:#5B6F73;--card:#fff;--line:#CBD8D6;--mon:#0E262B;--mi:#7FE3D0;--red:#C23B2E;--ok:#1F7A55;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);color-scheme:light}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0B1417;--ink:#E3EEEC;--mut:#8FA5A8;--card:#122126;--line:#243A40;--mon:#061015;--red:#F0766A;--ok:#4FC796;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0B1417;--ink:#E3EEEC;--mut:#8FA5A8;--card:#122126;--line:#243A40;--mon:#061015;--red:#F0766A;--ok:#4FC796;color-scheme:dark}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.7 "IBM Plex Sans Arabic",Tahoma,system-ui,sans-serif}
+#app{max-width:640px;margin:0 auto;padding:16px 16px 40px}
+h1{font-size:1.35rem;margin:8px 0 4px}
+.intro{color:var(--mut);margin:0 0 14px}
+.mon{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--line);border-radius:10px;overflow:hidden;margin-bottom:14px}
+.mon div{background:var(--mon);color:var(--mi);padding:8px 10px;direction:ltr;text-align:center}
+.mon b{display:block;font:700 1.35rem/1.2 ui-monospace,Menlo,monospace}
+.mon small{color:#9FB7B5;font-size:.72rem}
+.mon .w b{color:#FF8A7A}
+.dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--mi);margin-inline-end:6px;animation:bl 1s infinite}
+@keyframes bl{50%{opacity:.2}}
+@media (prefers-reduced-motion:reduce){.dot{animation:none}}
+.tabs{display:flex;gap:6px;margin-bottom:12px}
+.tabs button{flex:1;padding:10px 4px;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:8px;font:inherit;font-weight:600}
+.tabs button[aria-selected=true]{background:var(--ink);color:var(--bg)}
+.it{background:var(--card);border:1px solid var(--line);border-radius:8px;margin-bottom:8px;overflow:hidden}
+.it>button{all:unset;display:block;width:100%;box-sizing:border-box;padding:12px 14px;cursor:pointer}
+.it>button:focus-visible,.tabs button:focus-visible,.go:focus-visible{outline:3px solid var(--mi);outline-offset:2px}
+.it.d>button{color:var(--mut)}
+.ans{padding:10px 14px;border-top:1px dashed var(--line);background:rgba(127,227,208,.12)}
+.ans.x{background:rgba(194,59,46,.1)}
+.go{display:block;width:100%;margin-top:14px;padding:14px;border:0;border-radius:10px;background:var(--ink);color:var(--bg);font:inherit;font-weight:700}
+.q{font-weight:700;margin:6px 0 10px}
+.res{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px;margin-top:10px}
+.big{font-size:2rem;font-weight:700}
+.good{color:var(--ok)}.bad{color:var(--red)}
+ul{padding-inline-start:20px;margin:6px 0}
+</style>
+</head>
+<body>
+<div id="app">
+<h1>حالة سريرية: ألم بطني حاد</h1>
+<p class="intro">قسم الإسعاف، الساعة 2 بعد الظهر. أنت الطبيب المناوب. اسأل، افحص، اطلب الفحوص اللازمة فقط، ثم شخّص وعالج. كل إجراء بياخد وقت والمريضة ما بتستنى.</p>
+<div class="mon" id="mon"></div>
+<main id="main"></main>
+</div>
+<script>
+const C={
+pt:"مريضة عمرها 22 سنة، جت للإسعاف بشكوى ألم بالبطن من يوم تقريباً.",
+v:{hr:98,sys:122,dia:78,t:38.2,rr:16,sp:99},
+h:[
+["متى بدأ الألم وكيف تطور؟","بدأ من 18 ساعة حول السرّة، ثم انتقل لأسفل البطن من الجهة اليمنى وصار أشد.",1],
+["في غثيان أو إقياء أو فقدان شهية؟","قيء مرة وحدة، وما بدي آكل شي من أمس.",1],
+["في حرارة أو قشعريرة؟","حاسة بحرارة خفيفة من الليلة.",1],
+["آخر دورة شهرية؟ احتمال حمل؟","آخر دورة من 3 أسابيع ومنتظمة، وبتستعمل وسيلة منع حمل.",1],
+["في أعراض بولية (حرقة، تكرر)؟","لا، البول طبيعي.",1],
+["في إفرازات مهبلية أو ألم حوضي سابق؟","لا.",0],
+["سوابق مرضية أو جراحية، أدوية، حساسية؟","ما في أمراض ولا عمليات ولا حساسية.",1]],
+e:[
+["المظهر العام","تعبانة، مستلقية وركبتيها مثنيتين، وبتتألم من الحركة.",1],
+["جس البطن العام","البطن ليّن، ألم موضع بالحفرة الحرقفية اليمنى بدون انتفاخ.",1],
+["نقطة McBurney","ألم شديد عند النقطة.",1],
+["Rebound tenderness","إيجابي: ألم أشد عند رفع اليد بسرعة.",1],
+["علامة Rovsing","إيجابية: جس الحفرة اليسرى بيسبب ألم بالجهة اليمنى.",1],
+["علامة Psoas","إيجابية خفيفة.",1],
+["فحص حوضي بالأصبع","مؤلم وبدون كتلة. ما كان ضروري هون وما غيّر القرار.",0]],
+t:[
+["CBC","WBC = 14.2 ×10³/µL، العدلات 82%، Hb طبيعي.",1,15],
+["CRP","48 mg/L (مرتفع).",1,15],
+["βhCG","سلبي.",1,15],
+["تحليل بول","طبيعي، بدون التهاب.",1,15],
+["Ultrasound للبطن","الزائدة غير واضحة، بدون سائل حر. غير حاسم.",1,25],
+["CT بطن وحوض مع تباين","الزائدة قطرها 11 ملم بجدار سميك وتشبّع بالشحم حولها، بدون خراج أو انثقاب.",1,40],
+["ECG","طبيعي. ما له علاقة بالحالة.",0,10],
+["X-ray صدر","طبيعي. ما له علاقة بالحالة.",0,20]],
+dx:[["التهاب الزائدة الحاد",1],["التهاب معدة وأمعاء حاد",0],["حمل خارج الرحم",0],["التهاب حويضة وكلية",0]],
+tx:[
+["تسريب وريدي، صيام، مسكّن، مضاد حيوي، واستشارة جراحية لاستئصال الزائدة",1,"قرار صحيح. العلاج النهائي لالتهاب الزائدة الحاد غير المنثقب هو الجراحة، مع تغطية بالمضادات الحيوية."],
+["مسكّن ومضاد قيء وإرسالها للبيت مع مراجعة بعد أسبوع",0,"خطر: مع الانتظار بترتفع احتمالية الانثقاب والخراج. ما بنخرّج مريضة بتشخيص التهاب زائدة."],
+["مضادات حيوية فموية فقط بدون جراحة",0,"في دراسات عن العلاج بالمضادات فقط لحالات انتقائية غير معقدة، لكنه مو الخيار الأول هون وبيحتاج نقاش مع الجراح والمريضة وخطر عودة الالتهاب."],
+["تنظير هضمي علوي",0,"ما له علاقة بالتشخيص ولا بيعالج المشكلة."]],
+teach:[
+"الألم الذي يبدأ حول السرّة ثم ينتقل للحفرة الحرقفية اليمنى هو الإشارة الكلاسيكية. نقاط Alvarado (من 10) بتساعد بتقدير الاحتمال: انتقال الألم، فقدان الشهية، الغثيان، ألم الحفرة اليمنى (2)، Rebound، الحرارة، ارتفاع WBC (2)، وغلبة العدلات.",
+"عند كل امرأة بسن الإنجاب اطلب βhCG قبل التصوير الشعاعي لاستبعاد الحمل خارج الرحم.",
+"بالشابات: Ultrasound أولاً، وإذا كان غير حاسم نروح للـ CT. هاد بيقلل استئصالات الزائدة السلبية.",
+"كل ساعة تأخير بعد 24-48 ساعة بتزيد خطر الانثقاب."]
+};
+const $=s=>document.querySelector(s);
+let st={tab:"h",stage:"eval",min:0,done:{},bad:0,pts:0,dxOk:null,txOk:null};
+const tabs={h:"القصة",e:"الفحص السريري",t:"الفحوص"};
+function mon(){
+const m=st.min,v=C.v,hr=v.hr+Math.floor(m/30),t=Math.min(v.t+m/200,38.8).toFixed(1);
+const cells=[[hr,"HR",hr>105],[v.sys+"/"+v.dia,"BP",0],[t,"T °C",t>=38.6],[v.rr,"RR",0],[v.sp+"%","SpO₂",0],[m+" د","الوقت",0]];
+$("#mon").innerHTML=cells.map((c,i)=>`<div class="${c[2]?"w":""}"><b>${i==0?'<span class="dot"></span>':""}${c[0]}</b><small>${c[1]}</small></div>`).join("");
+}
+function act(k,i,cost){const key=k+i;if(st.done[key])return;st.done[key]=1;st.min+=cost;
+const it=C[k][i];if(it[2]===0&&k!="h")st.bad++;if(it[2]===1)st.pts++;render()}
+function evalView(){
+const k=st.tab,list=C[k];
+let h=`<p>${C.pt}</p><div class="tabs" role="tablist">${Object.keys(tabs).map(x=>`<button role="tab" aria-selected="${x==k}" onclick="st.tab='${x}';render()">${tabs[x]}</button>`).join("")}</div>`;
+h+=list.map((it,i)=>{const d=st.done[k+i],cost=k=="t"?it[3]:k=="e"?3:2;
+return `<div class="it ${d?"d":""}"><button onclick="act('${k}',${i},${cost})">${it[0]}${k=="t"&&!d?` <small class="intro">(${cost} د)</small>`:""}</button>${d?`<div class="ans ${it[2]===0&&k!="h"?"x":""}">${it[1]}</div>`:""}</div>`}).join("");
+return h+`<button class="go" onclick="st.stage='dx';render()">جاهز للتشخيص</button>`}
+function pick(arr,fn){return arr.map((o,i)=>`<div class="it"><button onclick="${fn}(${i})">${o[0]}</button></div>`).join("")}
+function dxView(){return `<p class="q">شو تشخيصك الأرجح؟</p>`+pick(C.dx,"dxPick")}
+function dxPick(i){st.dxOk=C.dx[i][1];st.stage="tx";render()}
+function txView(){return `<p class="q">${st.dxOk?"تشخيص صحيح. شو خطة العلاج؟":"التشخيص ما كان الأرجح، بس خلينا نشوف خطة العلاج:"}</p>`+pick(C.tx,"txPick")}
+function txPick(i){st.tx=i;st.txOk=C.tx[i][1];st.stage="end";render()}
+function endView(){
+const key=[...C.h,...C.e,...C.t].filter(x=>x[2]===1);
+const miss=["h","e","t"].flatMap(k=>C[k].map((x,i)=>x[2]===1&&!st.done[k+i]?x[0]:null)).filter(Boolean);
+const score=Math.max(0,Math.round((st.pts/key.length*50)+(st.dxOk?25:0)+(st.txOk?25:0)-st.bad*5));
+return `<div class="res"><div class="big ${score>=75?"good":"bad"}">${score}/100</div>
+<p>${C.tx[st.tx][2]}</p>
+<p>شو سألت وفحصت: ${st.pts} من ${key.length} عنصر أساسي. فحوص غير ضرورية: ${st.bad}. الوقت المستغرق: ${st.min} دقيقة.</p>
+${miss.length?`<p><b>فاتك:</b></p><ul>${miss.map(x=>`<li>${x}</li>`).join("")}</ul>`:""}
+<p><b>نقاط تعليمية:</b></p><ul>${C.teach.map(x=>`<li>${x}</li>`).join("")}</ul></div>
+<button class="go" onclick="st={tab:'h',stage:'eval',min:0,done:{},bad:0,pts:0,dxOk:null,txOk:null};render()">أعد الحالة</button>`}
+function render(){mon();$("#main").innerHTML={eval:evalView,dx:dxView,tx:txView,end:endView}[st.stage]();window.scrollTo({top:0})}
+render();
+</script>
+</body>
+</html>

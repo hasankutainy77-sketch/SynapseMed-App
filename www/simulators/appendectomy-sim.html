@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>محاكي استئصال الزائدة</title>
+<style>
+:root{--bg:#EDF2F1;--ink:#142428;--mut:#5B6F73;--card:#fff;--line:#CBD8D6;--mon:#0E262B;--mi:#7FE3D0;--red:#C23B2E;--ok:#1F7A55;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);color-scheme:light}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0B1417;--ink:#E3EEEC;--mut:#8FA5A8;--card:#122126;--line:#243A40;--mon:#061015;--red:#E0594B;--ok:#4FC796;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0B1417;--ink:#E3EEEC;--mut:#8FA5A8;--card:#122126;--line:#243A40;--mon:#061015;--red:#E0594B;--ok:#4FC796;color-scheme:dark}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.7 Tahoma,"Segoe UI",system-ui,sans-serif}
+#app{max-width:560px;margin:0 auto;padding:14px 14px 40px}
+h1{font-size:1.25rem;margin:6px 0 2px}
+.intro{color:var(--mut);margin:0 0 10px;font-size:.92rem}
+#vit{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line);border-radius:10px;overflow:hidden;margin-bottom:10px}
+#vit div{background:var(--mon);color:var(--mi);padding:6px 4px;direction:ltr;text-align:center}
+#vit b{display:block;font:700 1.15rem/1.2 ui-monospace,Menlo,monospace}
+#vit small{color:#9FB7B5;font-size:.68rem}
+#vit .w b{color:#FF8A7A}
+svg{display:block;width:100%;height:auto;border-radius:10px;border:1px solid var(--line)}
+.pulse{animation:bl .8s infinite}@keyframes bl{50%{opacity:.45}}
+@media (prefers-reduced-motion:reduce){.pulse{animation:none}}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin-top:10px}
+.card.alert{border-color:var(--red);background:rgba(194,59,46,.1)}
+.st{color:var(--mut);font-size:.85rem}
+.q{font-weight:700;margin:2px 0 6px}
+.tools{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}
+.tools button{padding:10px 4px;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:8px;font:inherit;font-size:.85rem;cursor:pointer;line-height:1.35}
+.tools button span{display:block;font-size:1.4rem}
+button:focus-visible{outline:3px solid var(--mi);outline-offset:2px}
+.go{display:block;width:100%;margin-top:12px;padding:13px;border:0;border-radius:10px;background:var(--ink);color:var(--bg);font:inherit;font-weight:700;cursor:pointer}
+.good{color:var(--ok)}.bad{color:var(--red)}
+.big{font-size:2rem;font-weight:700}ul{padding-inline-start:20px;margin:6px 0}
+</style>
+</head>
+<body>
+<div id="app">
+<h1>استئصال الزائدة، خطوة بخطوة</h1>
+<p class="intro">محاكاة تعليمية مبسطة (مقطع جانبي لجدار البطن). اختر الأداة المناسبة لكل خطوة، وإذا صار نزف سيطر عليه قبل ما ينهار الضغط. مو بديل عن التدريب العملي.</p>
+<div id="vit"></div><div id="scene"></div><div id="panel"></div>
+</div>
+<script>
+const $=s=>document.querySelector(s);
+const TOOLS={bet:["🧴","مطهر"],scal:["🔪","مشرط"],scis:["✂️","مقص"],caut:["⚡","كوتري"],clamp:["🗜️","كلامب"],lig:["🧵","خيط"],toothed:["🦷","ملقط مسنن"],babc:["🤏","ملقط ناعم"],retr:["📏","مبعد"],gauze:["🩹","شاش ضغط"],suct:["💧","مص وغسيل"]};
+const STEPS=[
+{t:"تحضير الجلد",q:"المريضة تحت التخدير العام. جهّز حقل العملية.",ok:"bet",why:"التعقيم بمطهر وتغطية الحقل قبل أي شق، مع جرعة مضاد حيوي وقائي قبل الجراحة."},
+{t:"شق الجلد",q:"اعمل شق صغير مائل فوق نقطة McBurney بالحفرة الحرقفية اليمنى.",ok:"scal",why:"شق Lanz أو McBurney بالمشرط: نظيف ومناسب تجميلياً ويعطي وصول جيد للزائدة."},
+{t:"النسيج تحت الجلد",q:"وصلت للنسيج الدهني. في أوعية صغيرة. تابع للصفاق السطحي.",ok:"caut",why:"الكوتري بيقطع وبيكوي الأوعية الصغيرة بنفس الوقت.",bad:{scal:{m:"قطعت وعاء تحت الجلد بدون كي، وبدأ نزف!",p:8,b:"s"}}},
+{t:"صفاق المنحرفة الخارجية",q:"افتح صفاق العضلة المنحرفة الخارجية على امتداد اتجاه أليافها.",ok:"scis",why:"القص بمحاذاة الألياف بالمقص بيحمي الأنسجة تحته.",bad:{scal:{m:"المشرط هون بيخاطر بأذية الأنسجة تحت الصفاق.",p:5}}},
+{t:"تفريق العضلات",q:"افتح العضلتين المنحرفة الداخلية والمستعرضة.",ok:"clamp",why:"التفريق الكليل بين الألياف (muscle splitting) بالكلامب بيحافظ على قوة الجدار وبيقلل النزف والألم.",bad:{scal:{m:"قطعت العضلة بدل تفريقها: ضعف بالجدار ونزف من الألياف!",p:10,b:"s"}}},
+{t:"فتح الصفاق",q:"ارفع الصفاق وافتحه بحذر لتتجنب الأمعاء.",ok:"scis",why:"رفع الصفاق بملقطين ثم فتحه بالمقص بيحمي الأمعاء الملتصقة تحته.",bad:{scal:{m:"المشرط عند الصفاق: خطر جرح الأمعاء. الأفضل المقص بعد رفعه.",p:15}}},
+{t:"توسيع الحقل",q:"وسّع الجرح لتشوف الأعور.",ok:"retr",why:"المبعد بيعطيك رؤية كافية من جرح صغير."},
+{t:"التعرف على الأعور",q:"اسحب الأعور بلطف. تتبّع الشريط الطولي (taenia coli) لقاعدة الزائدة.",ok:"babc",why:"الملقط الناعم غير الرضّي بيحمي جدار الأمعاء. الشرائط الطولية بتتجمع عند قاعدة الزائدة.",bad:{toothed:{m:"الملقط المسنن مزّق سيروزا الأمعاء!",p:15}}},
+{t:"ربط الشريان الزائدي",q:"الزائدة مرفوعة. الشريان الزائدي بيمر داخل المساريقا (mesoappendix). تعامل معه قبل ما تقص.",ok:"lig",why:"الشريان الزائدي فرع من الشريان اللفائفي القولوني. لازم ربطه قبل القطع.",bad:{scis:{m:"قطعت المساريقا بدون ربط الشريان الزائدي: نزف شرياني غزير!",p:15,b:"L"}}},
+{t:"ربط قاعدة الزائدة",q:"اربط قاعدة الزائدة قبل القطع.",ok:"lig",why:"ربط القاعدة بخيط قابل للامتصاص بيمنع تسرب المحتوى المعوي.",bad:{scal:{m:"قطعت قبل الربط: تسرّب محتوى معوي وخطر عدوى بالبطن.",p:20}}},
+{t:"قطع الزائدة",q:"اقطع الزائدة بعد القاعدة المربوطة.",ok:"scal",why:"القطع بعد الربط وإبعاد الزائدة عن الحقل لمنع تلوثه."},
+{t:"فحص النزف والغسيل",q:"تأكد من عدم وجود نزف واغسل الحقل.",ok:"suct",why:"فحص جذع الزائدة والمساريقا وغسل الحقل قبل الإغلاق ضروريين."},
+{t:"الإغلاق",q:"أغلق الجدار بالطبقات: الصفاق، العضلات، الصفاق الخارجي، الجلد.",ok:"lig",why:"الإغلاق طبقة بطبقة بخيوط مناسبة بيمنع الفتق والعدوى."}];
+const TEACH=["شق Lanz (أفقي، تجميلي) وشق McBurney (مائل) كلاهما مقبول، فوق نقطة McBurney.","الجدار: جلد، دهن، صفاق المنحرفة الخارجية، المنحرفة الداخلية، المستعرضة، الصفاق. العضلات بتُفرّق ولا تُقطع.","الشرائط الطولية (taenia coli) بتوصلك دائماً لقاعدة الزائدة.","الشريان الزائدي (من اللفائفي القولوني) لازم يُربط قبل قطع المساريقا.","عند النزف الغزير: اضغط، اكلمب، ثم اربط. السيطرة السريعة أهم من متابعة الخطوات."];
+let S,timer;
+const fresh=()=>({i:0,loss:0,pen:0,errs:[],bleed:null,state:"play",fb:null,note:""});
+const bp=()=>Math.max(0,120-Math.floor(S.loss/12)),hr=()=>Math.min(170,78+Math.floor(S.loss/9));
+function vit(){const b=bp();$("#vit").innerHTML=[[b+"/"+Math.max(0,Math.round(b*0.65)),"BP",b<90],[hr(),"HR",hr()>110],[S.loss+" mL","دم مفقود",S.loss>150],[Math.min(S.i+1,STEPS.length)+"/"+STEPS.length,"الخطوة",0]].map(c=>`<div class="${c[2]?"w":""}"><b>${c[0]}</b><small>${c[1]}</small></div>`).join("")}
+function scene(){const i=S.i,d=i>=6?150:i>=5?142:i>=4?92:i>=3?80:i>=2?40:0,bl=S.bleed;
+const L=[[20,20,"#E8B98F","جلد"],[40,40,"#F2D98A","دهن"],[80,12,"#EDEDE6","صفاق خارجي"],[92,28,"#B5504A","منحرفة داخلية"],[120,22,"#8F3A3A","مستعرضة"],[142,8,"#F4C7C3","صفاق"]];
+let s=`<svg viewBox="0 0 320 300" role="img" aria-label="مقطع جانبي لجدار البطن"><rect width="320" height="300" fill="#F7DCD6"/>`;
+s+=L.map(l=>`<rect x="0" y="${l[0]}" width="320" height="${l[1]}" fill="${l[2]}"/><text x="6" y="${l[0]+Math.min(l[1]-3,14)}" font-size="9" fill="#333">${l[3]}</text>`).join("");
+if(d)s+=`<rect x="124" y="20" width="72" height="${d}" fill="#2a1414"/>`;
+if(i>=7)s+=`<rect x="116" y="20" width="7" height="130" fill="#8a8f93"/><rect x="197" y="20" width="7" height="130" fill="#8a8f93"/>`;
+s+=`<ellipse cx="160" cy="215" rx="50" ry="34" fill="#E9A99B" stroke="#B9746A" stroke-width="2"/><path d="M118 205Q160 190 202 205M114 220Q160 208 206 220M122 236Q160 226 198 236" stroke="#C78A80" fill="none"/><text x="130" y="262" font-size="9" fill="#333">أعور</text>`;
+if(i<11){s+=`<polygon points="176,238 205,285 150,262" fill="#F0C27A" opacity=".7"/><path d="M176 238Q205 250 205 285" stroke="#D9857A" stroke-width="10" stroke-linecap="round" fill="none"/><line x1="160" y1="250" x2="192" y2="274" stroke="#B3261E" stroke-width="2"/>`;
+if(i>=9)s+=`<circle cx="178" cy="262" r="3.5" fill="#111"/>`;if(i>=10)s+=`<circle cx="177" cy="242" r="4" fill="#111"/>`}
+else s+=`<circle cx="177" cy="242" r="4" fill="#111"/><path d="M250 190Q275 200 275 230" stroke="#D9857A" stroke-width="9" stroke-linecap="round" fill="none"/>`;
+if(bl&&!(bl.clamped)){const y=bl.sev=="L"?"M":"";s+=bl.sev=="L"?`<circle class="pulse" cx="182" cy="268" r="16" fill="#C0211B" opacity=".85"/><circle class="pulse" cx="160" cy="255" r="9" fill="#C0211B" opacity=".8"/>`:`<rect class="pulse" x="124" y="40" width="72" height="40" fill="#C0211B" opacity=".75"/>`}
+return s+"</svg>"}
+function panel(){let h="";
+if(S.state=="dead")return `<div class="card alert"><div class="big bad">توقف القلب</div><p>انهار الضغط بسبب نزف غزير (صدمة نزفية). بالواقع، السيطرة السريعة على النزف أهم من متابعة الجراحة.</p><ul>${TEACH.slice(-1).map(x=>`<li>${x}</li>`).join("")}</ul></div><button class="go" onclick="start()">أعد المحاولة</button>`;
+if(S.state=="done"){const sc=Math.max(0,100-S.pen-Math.floor(S.loss/20));const e=[...new Set(S.errs)];
+return `<div class="card"><div class="big ${sc>=75?"good":"bad"}">${sc}/100</div><p>الدم المفقود: ${S.loss} مل. أخطاء: ${e.length}.</p>${e.length?`<p><b>أخطاؤك:</b></p><ul>${e.map(x=>`<li>${x}</li>`).join("")}</ul>`:`<p class="good">ما غلطت بأي خطوة!</p>`}<p><b>نقاط تعليمية:</b></p><ul>${TEACH.map(x=>`<li>${x}</li>`).join("")}</ul></div><button class="go" onclick="start()">أعد العملية</button>`}
+const st=STEPS[S.i];
+h+=`<div class="card ${S.bleed?"alert":""}"><div class="st">الخطوة ${S.i+1} من ${STEPS.length}: ${st.t}</div>`;
+if(S.bleed)h+=`<p class="q bad">نزف! ${S.bleed.sev=="L"?(S.bleed.clamped?"الكلامب وقف النزف. اربط الوعاء الآن.":"نزف شرياني غزير. اضغط أو اكلمب ثم اربط."):"سيطر عليه بسرعة."}</p>`;
+else if(S.state=="fb")h+=`<p class="good"><b>${S.fb.ok?"صح. ":""}</b>${S.fb.msg}</p>`;
+else h+=`<p class="q">${st.q}</p>`;
+if(S.note)h+=`<p class="bad" role="status">${S.note}</p>`;
+h+=`</div>`;
+if(S.state=="fb")h+=`<button class="go" onclick="next()">${S.i==STEPS.length-1?"إنهاء العملية":"الخطوة التالية"}</button>`;
+else h+=`<div class="tools">${Object.keys(TOOLS).map(k=>`<button onclick="tool('${k}')"><span>${TOOLS[k][0]}</span>${TOOLS[k][1]}</button>`).join("")}</div>`;
+return h}
+function render(){vit();$("#scene").innerHTML=scene();$("#panel").innerHTML=panel()}
+function tool(id){if(S.state!="play")return;S.note="";const st=STEPS[S.i];
+if(S.bleed)return stop(id);
+if(st.ok==id){S.fb={ok:1,msg:st.why};S.state="fb";return render()}
+const b=st.bad&&st.bad[id];S.pen+=b?b.p:3;S.errs.push(st.t+": "+(b?b.m:"أداة غير مناسبة لهالخطوة."));
+if(b&&b.b){S.bleed={sev:b.b,clamped:0,g:0};S.note=b.m;startTimer()}else S.note=b?b.m:"هالأداة ما بتناسب هالخطوة. فكّر بهدفها.";
+render()}
+function stop(id){const b=S.bleed;
+if(id=="gauze"){b.g=Date.now()+8000;S.note="الضغط بالشاش خفّف النزف مؤقتاً. لازم سيطرة نهائية."}
+else if(b.sev=="s"&&(id=="caut"||id=="clamp"))return resolve();
+else if(b.sev=="L"&&id=="clamp"&&!b.clamped){b.clamped=1;S.note="الكلامب وقف النزف."}
+else if(b.sev=="L"&&b.clamped&&id=="lig")return resolve();
+else{S.pen+=3;S.note="هالأداة ما بتسيطر على هالنزف. "+(b.sev=="L"?"استعمل كلامب ثم خيط.":"استعمل الكوتري.")}
+render()}
+function resolve(){S.bleed=null;clearInterval(timer);S.fb={ok:1,msg:"سيطرت على النزف. دم مفقود: "+S.loss+" مل. كمّل."};S.state="fb";render()}
+function startTimer(){clearInterval(timer);timer=setInterval(()=>{const b=S.bleed;if(!b){clearInterval(timer);return}
+const r=b.clamped?0:b.sev=="L"?22:6;S.loss+=Math.round(r*(Date.now()<b.g?0.4:1));
+if(bp()<60){S.bleed=null;S.state="dead";clearInterval(timer);return render()}vit();$("#scene").innerHTML=scene()},1000)}
+function next(){S.i++;S.fb=null;S.note="";if(S.i>=STEPS.length){S.i=STEPS.length-1;S.state="done"}else S.state="play";render();window.scrollTo({top:0})}
+function start(){clearInterval(timer);S=fresh();render();window.scrollTo({top:0})}
+start();
+</script>
+</body>
+</html>

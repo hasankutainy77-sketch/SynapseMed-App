@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>استئصال الزائدة 3D</title>
+<style>
+:root{--bg:#EDF2F1;--ink:#142428;--mut:#5B6F73;--card:#fff;--line:#CBD8D6;--mon:#0E262B;--mi:#7FE3D0;--red:#C23B2E;--ok:#1F7A55;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);color-scheme:light}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0B1417;--ink:#E3EEEC;--mut:#8FA5A8;--card:#122126;--line:#243A40;--mon:#061015;--red:#E0594B;--ok:#4FC796;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0B1417;--ink:#E3EEEC;--mut:#8FA5A8;--card:#122126;--line:#243A40;--mon:#061015;--red:#E0594B;--ok:#4FC796;color-scheme:dark}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.7 Tahoma,"Segoe UI",system-ui,sans-serif}
+#app{max-width:600px;margin:0 auto;padding:14px 14px 40px}
+h1{font-size:1.25rem;margin:6px 0 2px}.intro{color:var(--mut);margin:0 0 10px;font-size:.92rem}
+#vit{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line);border-radius:10px;overflow:hidden;margin-bottom:10px}
+#vit div{background:var(--mon);color:var(--mi);padding:6px 4px;direction:ltr;text-align:center}
+#vit b{display:block;font:700 1.15rem/1.2 ui-monospace,Menlo,monospace}#vit small{color:#9FB7B5;font-size:.68rem}#vit .w b{color:#FF8A7A}
+#cv{width:100%;height:58vh;min-height:300px;max-height:520px;border-radius:10px;border:1px solid var(--line);background:#1b1416;touch-action:none;overflow:hidden}
+#cv canvas{display:block;width:100%;height:100%}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin-top:10px}
+.card.alert{border-color:var(--red);background:rgba(194,59,46,.1)}
+.st{color:var(--mut);font-size:.85rem}.q{font-weight:700;margin:2px 0 6px}
+.tools{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:10px}
+.tools button{padding:8px 2px;border:2px solid var(--line);background:var(--card);color:var(--ink);border-radius:8px;font:inherit;font-size:.78rem;cursor:pointer;line-height:1.3}
+.tools button[aria-pressed=true]{border-color:var(--mi);background:var(--mon);color:var(--mi)}
+.tools button span{display:block;font-size:1.3rem}
+button:focus-visible{outline:3px solid var(--mi);outline-offset:2px}
+.go{display:block;width:100%;margin-top:12px;padding:13px;border:0;border-radius:10px;background:var(--ink);color:var(--bg);font:inherit;font-weight:700;cursor:pointer}
+.good{color:var(--ok)}.bad{color:var(--red)}.big{font-size:2rem;font-weight:700}ul{padding-inline-start:20px;margin:6px 0}
+</style>
+</head>
+<body>
+<div id="app">
+<h1>استئصال الزائدة 3D (نموذج أولي)</h1>
+<p class="intro">اسحب لتدوير الكاميرا. اختر أداة ثم اضغط على المنطقة اللي بتنبض بالأحمر. إذا صار نزف، سيطر عليه قبل ما ينهار الضغط. يحتاج إنترنت لتحميل مكتبة 3D.</p>
+<div id="vit"></div><div id="cv"></div><div id="panel"></div>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+const $=s=>document.querySelector(s);
+if(typeof THREE==="undefined"){$("#cv").innerHTML='<p class="intro" style="padding:20px;color:#ddd">تعذّر تحميل مكتبة 3D. تأكد من الاتصال بالإنترنت وأعد فتح الصفحة.</p>'}else main();
+function main(){
+const TOOLS={scal:["🔪","مشرط"],scis:["✂️","مقص"],caut:["⚡","كوتري"],clamp:["🗜️","كلامب"],lig:["🧵","خيط"],toothed:["🦷","ملقط مسنن"],babc:["🤏","ملقط ناعم"],gauze:["🩹","شاش ضغط"]};
+const M=(c,o)=>new THREE.MeshLambertMaterial(Object.assign({color:c,emissive:0x000000},o||{}));
+const V=a=>new THREE.Vector3(a[0],a[1],a[2]);
+const cv=$("#cv"),scene=new THREE.Scene(),cam=new THREE.PerspectiveCamera(45,1,.1,100);
+const R=new THREE.WebGLRenderer({antialias:true});cv.appendChild(R.domElement);
+scene.add(new THREE.AmbientLight(0xffffff,.75));const dl=new THREE.DirectionalLight(0xffffff,.8);dl.position.set(3,6,4);scene.add(dl);
+/* الجدار */
+const LAY=[["skin",0,.25,0xE8B98F],["fat",-.3,.5,0xF2D98A],["apon",-.65,.12,0xEDEDE6],["musc",-.95,.45,0xB5504A],["peri",-1.25,.1,0xF4C7C3]];
+const halves={},open={};
+LAY.forEach(l=>{halves[l[0]]=[-1,1].map(s=>{const m=new THREE.Mesh(new THREE.BoxGeometry(3,l[2],4.4),M(l[3]));m.position.set(s*1.5,l[1],0);m.userData.s=s;scene.add(m);return m})});
+const floor=new THREE.Mesh(new THREE.BoxGeometry(8,.2,6),M(0xD9A79C));floor.position.y=-3.5;scene.add(floor);
+const pool=new THREE.Mesh(new THREE.CylinderGeometry(1,1,.05,24),M(0x9B1712));pool.position.y=-3.37;pool.scale.set(.001,1,.001);scene.add(pool);
+/* الأمعاء */
+const bowel=new THREE.Group();scene.add(bowel);
+const cecum=new THREE.Mesh(new THREE.SphereGeometry(1,24,16),M(0xE9A99B));cecum.scale.set(1.3,.9,1.05);cecum.position.set(-.1,-2.4,0);bowel.add(cecum);
+const tube=(p,r,c)=>new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(p.map(V)),24,r,8,false),M(c));
+const app=tube([[.9,-2.55,.2],[1.5,-2.8,.5],[1.9,-3.05,.1],[1.6,-3.1,-.4]],.14,0xD9857A);bowel.add(app);
+const art=tube([[1,-2.75,.05],[1.45,-2.95,.1],[1.75,-3.05,0]],.06,0xB3261E);bowel.add(art);
+const base=new THREE.Mesh(new THREE.SphereGeometry(.25,12,10),M(0xFFD54A,{transparent:true,opacity:.6}));base.position.set(.95,-2.58,.2);bowel.add(base);
+const ball=p=>{const b=new THREE.Mesh(new THREE.SphereGeometry(.1,10,8),M(0x111111));b.position.set(p[0],p[1],p[2]);bowel.add(b)};
+const bleedM=new THREE.Mesh(new THREE.SphereGeometry(.2,12,10),M(0xC0211B));bleedM.visible=false;scene.add(bleedM);
+const PG=new THREE.SphereGeometry(.06,6,5),PM=M(0xB01510),parts=[];
+/* الخطوات */
+const STEPS=[
+{t:"شق الجلد",q:"اختر المشرط واضغط على الجلد لعمل شق صغير فوق نقطة McBurney.",ok:"scal",why:"شق Lanz أو McBurney بالمشرط: نظيف وبيعطي وصول جيد للزائدة.",tg:()=>halves.skin,fx:()=>open.skin=1},
+{t:"النسيج تحت الجلد",q:"وصلت للنسيج الدهني. في أوعية صغيرة. تابع بحذر.",ok:"caut",why:"الكوتري بيقطع وبيكوي الأوعية الصغيرة بنفس الوقت.",tg:()=>halves.fat,fx:()=>open.fat=1,bad:{scal:{m:"قطعت وعاء تحت الجلد بدون كي، وبدأ نزف!",p:8,b:"s",at:[0,-.45,0]}}},
+{t:"صفاق المنحرفة الخارجية",q:"افتح صفاق العضلة المنحرفة الخارجية بمحاذاة الألياف.",ok:"scis",why:"القص بمحاذاة الألياف بالمقص بيحمي الأنسجة تحته.",tg:()=>halves.apon,fx:()=>open.apon=1,bad:{scal:{m:"المشرط هون بيخاطر بأذية الأنسجة تحت الصفاق.",p:5}}},
+{t:"تفريق العضلات",q:"افتح العضلتين المنحرفة الداخلية والمستعرضة.",ok:"clamp",why:"التفريق الكليل بين الألياف (muscle splitting) بيحافظ على قوة الجدار وبيقلل النزف.",tg:()=>halves.musc,fx:()=>open.musc=1,bad:{scal:{m:"قطعت العضلة بدل تفريقها: ضعف بالجدار ونزف!",p:10,b:"s",at:[0,-1,0]}}},
+{t:"فتح الصفاق",q:"افتح الصفاق بحذر لتتجنب الأمعاء.",ok:"scis",why:"رفع الصفاق وفتحه بالمقص بيحمي الأمعاء تحته.",tg:()=>halves.peri,fx:()=>open.peri=1,bad:{scal:{m:"المشرط عند الصفاق: خطر جرح الأمعاء. الأفضل المقص.",p:15}}},
+{t:"التعرف على الأعور",q:"اسحب الأعور بلطف لرفعه للحقل.",ok:"babc",why:"الملقط الناعم غير الرضّي بيحمي جدار الأمعاء.",tg:()=>[cecum],fx:()=>S.lift=1,bad:{toothed:{m:"الملقط المسنن مزّق سيروزا الأمعاء!",p:15}}},
+{t:"ربط الشريان الزائدي",q:"الشريان الأحمر الرفيع داخل المساريقا. تعامل معه قبل ما تقص.",ok:"lig",why:"الشريان الزائدي فرع من الشريان اللفائفي القولوني. لازم ربطه قبل القطع.",tg:()=>[art],fx:()=>ball([1.45,-2.95,.1]),bad:{scis:{m:"قطعت المساريقا بدون ربط الشريان: نزف شرياني غزير!",p:15,b:"L",at:[1.45,-2.95,.1]}}},
+{t:"ربط قاعدة الزائدة",q:"اربط القاعدة (الكرة الصفراء) قبل القطع.",ok:"lig",why:"ربط القاعدة بخيط قابل للامتصاص بيمنع تسرب المحتوى المعوي.",tg:()=>[base],fx:()=>{ball([.95,-2.58,.2]);base.visible=false},bad:{scal:{m:"قطعت قبل الربط: تسرّب محتوى معوي وخطر عدوى.",p:20}}},
+{t:"قطع الزائدة",q:"اقطع الزائدة بعد القاعدة المربوطة.",ok:"scal",why:"القطع بعد الربط وإبعاد الزائدة عن الحقل لمنع التلوث.",tg:()=>[app],fx:()=>app.userData.cut=1},
+{t:"الإغلاق",q:"أغلق الجدار: اختر الخيط واضغط على الجلد المفتوح.",ok:"lig",why:"الإغلاق طبقة بطبقة بيمنع الفتق والعدوى.",tg:()=>halves.skin,fx:()=>{for(const k in open)open[k]=0;S.lift=0}}];
+const TEACH=["شق Lanz (أفقي) وشق McBurney (مائل) كلاهما مقبول، فوق نقطة McBurney.","الجدار: جلد، دهن، صفاق خارجي، عضلات، صفاق. العضلات بتُفرّق ولا تُقطع.","الشريان الزائدي (من اللفائفي القولوني) لازم يُربط قبل قطع المساريقا.","عند النزف الغزير: اضغط، اكلمب، ثم اربط. السيطرة السريعة أهم من متابعة الخطوات."];
+let S,timer,last=[];
+const fresh=()=>({i:0,loss:0,pen:0,errs:[],bleed:null,state:"play",fb:null,note:"",tool:null,lift:0});
+const bp=()=>Math.max(0,120-Math.floor(S.loss/12)),hr=()=>Math.min(170,78+Math.floor(S.loss/9));
+function vit(){const b=bp();$("#vit").innerHTML=[[b+"/"+Math.round(b*.65),"BP",b<90],[hr(),"HR",hr()>110],[S.loss+" mL","دم مفقود",S.loss>150],[Math.min(S.i+1,STEPS.length)+"/"+STEPS.length,"الخطوة",0]].map(c=>`<div class="${c[2]?"w":""}"><b>${c[0]}</b><small>${c[1]}</small></div>`).join("")}
+function panel(){let h="";
+if(S.state=="dead")return `<div class="card alert"><div class="big bad">توقف القلب</div><p>انهار الضغط بسبب نزف غزير (صدمة نزفية). السيطرة السريعة على النزف أهم من متابعة الجراحة.</p></div><button class="go" onclick="start()">أعد المحاولة</button>`;
+if(S.state=="done"){const sc=Math.max(0,100-S.pen-Math.floor(S.loss/20)),e=[...new Set(S.errs)];
+return `<div class="card"><div class="big ${sc>=75?"good":"bad"}">${sc}/100</div><p>الدم المفقود: ${S.loss} مل. أخطاء: ${e.length}.</p>${e.length?`<p><b>أخطاؤك:</b></p><ul>${e.map(x=>`<li>${x}</li>`).join("")}</ul>`:`<p class="good">ما غلطت بأي خطوة!</p>`}<p><b>نقاط تعليمية:</b></p><ul>${TEACH.map(x=>`<li>${x}</li>`).join("")}</ul></div><button class="go" onclick="start()">أعد العملية</button>`}
+const st=STEPS[S.i];
+h+=`<div class="card ${S.bleed?"alert":""}"><div class="st">الخطوة ${S.i+1} من ${STEPS.length}: ${st.t}</div>`;
+if(S.bleed)h+=`<p class="q bad">نزف! اضغط على النقطة الحمراء. ${S.bleed.sev=="L"?(S.bleed.clamped?"الكلامب وقف النزف. اربط الوعاء الآن.":"نزف شرياني: كلامب ثم خيط (الشاش يخفف مؤقتاً)."):"سيطر عليه بالكوتري."}</p>`;
+else if(S.state=="fb")h+=`<p class="good"><b>صح. </b>${S.fb}</p>`;else h+=`<p class="q">${st.q}</p>`;
+if(S.note)h+=`<p class="bad" role="status">${S.note}</p>`;
+h+=`</div>`;
+if(S.state=="fb")h+=`<button class="go" onclick="next()">${S.i==STEPS.length-1?"إنهاء العملية":"الخطوة التالية"}</button>`;
+else h+=`<div class="tools">${Object.keys(TOOLS).map(k=>`<button aria-pressed="${S.tool==k}" onclick="pickTool('${k}')"><span>${TOOLS[k][0]}</span>${TOOLS[k][1]}</button>`).join("")}</div>`;
+return h}
+const render=()=>{vit();$("#panel").innerHTML=panel()};
+window.pickTool=k=>{S.tool=k;S.note="";render()};
+function use(id){const st=STEPS[S.i];S.note="";
+if(S.bleed)return stop(id);
+if(st.ok==id){st.fx();S.fb=st.why;S.state="fb";return render()}
+const b=st.bad&&st.bad[id];S.pen+=b?b.p:3;S.errs.push(st.t+": "+(b?b.m:"أداة غير مناسبة لهالخطوة."));
+if(b&&b.b){S.bleed={sev:b.b,clamped:0,g:0,at:b.at};S.note=b.m;bleedM.material.color.setHex(0xC0211B);bleedM.visible=true;timer=setInterval(tick,1000)}else S.note=b?b.m:"هالأداة ما بتناسب هالخطوة.";
+render()}
+function stop(id){const b=S.bleed;
+if(id=="gauze"){b.g=Date.now()+8000;S.note="الضغط بالشاش خفّف النزف مؤقتاً."}
+else if(b.sev=="s"&&(id=="caut"||id=="clamp"))return resolve();
+else if(b.sev=="L"&&id=="clamp"&&!b.clamped){b.clamped=1;bleedM.material.color.setHex(0x777777);S.note="الكلامب وقف النزف."}
+else if(b.sev=="L"&&b.clamped&&id=="lig")return resolve();
+else{S.pen+=3;S.note="هالأداة ما بتسيطر على هالنزف. "+(b.sev=="L"?"استعمل كلامب ثم خيط.":"استعمل الكوتري.")}
+render()}
+function resolve(){S.bleed=null;bleedM.visible=false;clearInterval(timer);S.fb="سيطرت على النزف. دم مفقود: "+S.loss+" مل. كمّل.";S.state="fb";const st=STEPS[S.i];st.fx();render()}
+function tick(){const b=S.bleed;if(!b){clearInterval(timer);return}
+S.loss+=Math.round((b.clamped?0:b.sev=="L"?22:6)*(Date.now()<b.g?.4:1));
+if(bp()<60){S.bleed=null;bleedM.visible=false;S.state="dead";clearInterval(timer);return render()}vit()}
+function next(){S.i++;S.fb=null;S.note="";if(S.i>=STEPS.length){S.i=STEPS.length-1;S.state="done"}else S.state="play";render()}
+window.next=next;
+function start(){clearInterval(timer);S=fresh();for(const k in open)open[k]=0;app.userData.cut=0;base.visible=true;bleedM.visible=false;
+for(let i=bowel.children.length-1;i>=0;i--){const c=bowel.children[i];if(c.geometry&&c.geometry.type=="SphereGeometry"&&c.material.color.getHex()==0x111111)bowel.remove(c)}
+parts.splice(0).forEach(p=>scene.remove(p));render()}
+window.start=start;
+/* الكاميرا والضغط */
+let th=.5,ph=.75,rad=9.5,drag=null;
+function setCam(){cam.position.set(rad*Math.sin(ph)*Math.sin(th),rad*Math.cos(ph)-1.4,rad*Math.sin(ph)*Math.cos(th));cam.lookAt(0,-1.6,0)}
+cv.addEventListener("pointerdown",e=>{drag={x:e.clientX,y:e.clientY,mv:0};cv.setPointerCapture(e.pointerId)});
+cv.addEventListener("pointermove",e=>{if(!drag)return;const dx=e.clientX-drag.x,dy=e.clientY-drag.y;drag.mv+=Math.abs(dx)+Math.abs(dy);th-=dx*.01;ph=Math.min(1.4,Math.max(.15,ph-dy*.008));drag.x=e.clientX;drag.y=e.clientY});
+cv.addEventListener("pointerup",e=>{const mv=drag&&drag.mv;drag=null;if(mv<6)tap(e)});
+cv.addEventListener("wheel",e=>{e.preventDefault();rad=Math.min(14,Math.max(5,rad+e.deltaY*.01))},{passive:false});
+const RC=new THREE.Raycaster();
+function tap(e){if(S.state!="play")return;if(!S.tool){S.note="اختر أداة أولاً.";return render()}
+const r=cv.getBoundingClientRect(),p=new THREE.Vector2((e.clientX-r.left)/r.width*2-1,-((e.clientY-r.top)/r.height)*2+1);
+RC.setFromCamera(p,cam);const tg=S.bleed?[bleedM]:[].concat(STEPS[S.i].tg());
+if(!RC.intersectObjects(tg).length){S.note="اضغط على المنطقة اللي بتنبض بالأحمر.";return render()}
+use(S.tool)}
+/* الحلقة */
+function size(){const w=cv.clientWidth,h=cv.clientHeight;R.setSize(w,h,false);cam.aspect=w/h;cam.updateProjectionMatrix()}
+addEventListener("resize",size);
+function loop(t){requestAnimationFrame(loop);
+for(const n in halves)halves[n].forEach(m=>{const x=m.userData.s*(1.5+(open[n]?.85:0));m.position.x+=(x-m.position.x)*.12});
+bowel.position.y+=((S.lift?1.3:0)-bowel.position.y)*.1;
+const ax=app.userData.cut?3.4:0;app.position.x+=(ax-app.position.x)*.1;app.position.y+=((app.userData.cut?1.2:0)-app.position.y)*.1;
+last.forEach(m=>m.material.emissive.setRGB(0,0,0));last=[];
+if(S&&S.state=="play"){const tg=S.bleed?[bleedM]:[].concat(STEPS[S.i].tg()),k=.25+.2*Math.sin(t/180);tg.forEach(m=>{if(m.material.emissive){m.material.emissive.setRGB(k,0,0);last.push(m)}})}
+if(S&&S.bleed){const b=S.bleed,q=V(b.at);if(b.sev=="L")q.add(bowel.position);bleedM.position.copy(q);
+if(!b.clamped){const n=b.sev=="L"?2:1;for(let i=0;i<n;i++){const m=new THREE.Mesh(PG,PM);m.position.copy(q);m.userData.v=new THREE.Vector3((Math.random()-.5)*.04,0,(Math.random()-.5)*.04);scene.add(m);parts.push(m)}}}
+for(let i=parts.length-1;i>=0;i--){const m=parts[i];m.userData.v.y-=.008;m.position.add(m.userData.v);if(m.position.y<-3.35){scene.remove(m);parts.splice(i,1)}}
+const ps=.001+Math.min(2.6,S.loss/160);pool.scale.set(ps,1,ps);
+setCam();R.render(scene,cam)}
+size();start();requestAnimationFrame(loop);
+}
+</script>
+</body>
+</html>

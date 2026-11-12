@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>محاكي الريح الصدرية</title>
+<style>
+:root{--bg:#EDF2F1;--ink:#142428;--mut:#5B6F73;--card:#fff;--line:#CBD8D6;--mon:#0E262B;--mi:#7FE3D0;--red:#C23B2E;--ok:#1F7A55;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);color-scheme:light}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0B1417;--ink:#E3EEEC;--mut:#8FA5A8;--card:#122126;--line:#243A40;--mon:#061015;--red:#E0594B;--ok:#4FC796;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0B1417;--ink:#E3EEEC;--mut:#8FA5A8;--card:#122126;--line:#243A40;--mon:#061015;--red:#E0594B;--ok:#4FC796;color-scheme:dark}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.7 Tahoma,"Segoe UI",system-ui,sans-serif}
+#app{max-width:560px;margin:0 auto;padding:14px 14px 40px}
+h1{font-size:1.25rem;margin:6px 0 2px}.intro{color:var(--mut);margin:0 0 10px;font-size:.92rem}
+#vit{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line);border-radius:10px;overflow:hidden;margin-bottom:10px}
+#vit div{background:var(--mon);color:var(--mi);padding:6px 4px;direction:ltr;text-align:center}
+#vit b{display:block;font:700 1.15rem/1.2 ui-monospace,Menlo,monospace}#vit small{color:#9FB7B5;font-size:.68rem}#vit .w b{color:#FF8A7A}
+svg{display:block;width:100%;height:auto;border-radius:10px;border:1px solid var(--line)}
+.pulse{animation:bl .8s infinite}@keyframes bl{50%{opacity:.4}}
+@media (prefers-reduced-motion:reduce){.pulse{animation:none}}
+.tabs{display:flex;gap:8px;margin-bottom:8px}.tabs button{flex:1;padding:8px;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:8px;font:inherit;cursor:pointer}.tabs button[aria-pressed=true]{background:var(--ink);color:var(--bg)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin-top:10px}
+.card.alert{border-color:var(--red);background:rgba(194,59,46,.1)}
+.st{color:var(--mut);font-size:.85rem}.q{font-weight:700;margin:2px 0 4px}
+.opt{display:block;width:100%;text-align:start;margin-top:8px;padding:11px 14px;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:10px;font:inherit;cursor:pointer}
+button:focus-visible{outline:3px solid var(--mi);outline-offset:2px}
+.go{display:block;width:100%;margin-top:12px;padding:13px;border:0;border-radius:10px;background:var(--ink);color:var(--bg);font:inherit;font-weight:700;cursor:pointer}
+.good{color:var(--ok)}.bad{color:var(--red)}.big{font-size:2rem;font-weight:700}ul{padding-inline-start:20px;margin:6px 0}
+.bar{height:8px;background:var(--line);border-radius:4px;overflow:hidden;margin-top:6px}.bar i{display:block;height:100%;background:var(--red)}
+</style>
+</head>
+<body>
+<div id="app">
+<h1>الريح الصدرية، خطوة بخطوة</h1>
+<p class="intro">محاكاة تعليمية: من التقييم والتشخيص لحد تركيب الأنبوب الصدري ومتابعته. بدّل بين المنظر التشريحي والأشعة ومنظر الإجراء. تصرف بسرعة إذا تدهور المريض. مبنية على توصيات عامة (ATLS, BTS)، وراجع دائماً بروتوكول مشفاك.</p>
+<div id="vit"></div><div id="scene"></div><div id="panel"></div>
+</div>
+<script>
+const $=s=>document.querySelector(s);
+const STEPS=[
+{s:"التقييم والتشخيص",t:"ABCDE والأكسجين",q:"شاب عمره 20 سنة، نحيف وطويل ومدخّن. ألم حاد بالصدر الأيسر وضيق نفس بدأ فجأة من 3 ساعات. HR 108، BP 118/76، RR 24، SpO₂ 92% على الهواء. شو أول إجراء؟",o:[["تقييم ABCDE، أكسجين عالي التدفق، مراقبة، وتأمين وريد",1],["إرساله فوراً للتصوير المقطعي",0,"الأولوية للتقييم والأكسجين والمراقبة قبل نقله.",8],["مسكّن وإرساله للبيت",0,"ضيق النفس وانخفاض SpO₂ بيستدعوا تقييماً كاملاً.",10]],why:"الأكسجين العالي بيسرّع امتصاص الهواء من الجنب وبيحسّن الأكسجة. SpO₂ صارت 95%.",fx:{sp:95}},
+{t:"الفحص السريري",q:"كيف بتفحص الصدر؟",o:[["معاينة وجس وقرع وإصغاء للجهتين، مع موضع الرغامى والأوردة العنقية",1],["الإصغاء للجهة اليمنى فقط",0,"لازم مقارنة الجهتين.",5],["فحص البطن فقط",0,"الشكوى صدرية، الفحص الصدري هو الأساس.",6]],why:"يسار: غياب أصوات التنفس مع فرط رنين وتراجع الحركة. الرغامى مركزية وما في JVD: مو ريح توترية.",fx:{}},
+{t:"التصوير",q:"المريض مستقر نسبياً والرغامى مركزية. شو بتطلب؟",o:[["أشعة صدر خلفية أمامية واقفة (PA)",1],["CT صدر أولاً",0,"ما في داعي بالبداية، الأشعة السادة كافية وأسرع.",5],["إبرة مزيلة للضغط فوراً",0,"ما في علامات توتر. الإبرة بدون داعي بتعرّض لأذية.",10]],why:"الأشعة: ريح صدرية يسرى، حافة هواء أكبر من 2 سم، خط الجنب الحشوي ظاهر، بدون انزياح المنصف.",fx:{cxr:1}},
+{t:"قرار العلاج",q:"ريح صدرية عفوية أولية كبيرة (حافة > 2 سم) ومعها أعراض. شو بتعمل؟",o:[["تدخّل لإفراغ الهواء: أنبوب صدري صغير (أو سحب بالإبرة حسب البروتوكول)",1],["مسكّن ومراقبة فقط",0,"الحالة ممكن تتطور لريح صدرية توترية!",10,"tn"],["إخراجه ومراجعة بعد أسبوع",0,"مريض عنده أعراض وحافة كبيرة ما بيتخرّج بدون تدخل.",10]],why:"الحافة الكبيرة مع الأعراض بتستدعي إفراغ الهواء. منكمل بتركيب أنبوب صدري.",fx:{}},
+{s:"الإجراء: أنبوب صدري",t:"التحضير والموافقة",q:"قررت تركيب أنبوب صدري. شو التحضير؟",o:[["موافقة المريض، تعقيم الجلد وتغطية معقمة، تسكين، وتجهيز الأدوات والمراقبة",1],["البدء بدون تعقيم لأن الحالة إسعافية",0,"هاي مو حالة إنعاش. التعقيم ضروري لمنع التهاب الجنب.",12],["تخدير عام",0,"مو ضروري ولا آمن هون.",8]],why:"التعقيم والموافقة والتسكين والمراقبة شروط أساسية قبل الإجراء.",fx:{}},
+{t:"تحديد المكان",q:"وين بتدخل الأنبوب؟",o:[["المثلث الآمن: الفراغ الوربي الرابع أو الخامس أمام خط الإبط المتوسط",1],["الفراغ الثاني على خط منتصف الترقوة",0,"هاد مكان الإبرة المؤقتة، مو الأنبوب (ندبة وأقرب للأوعية الكبيرة).",8],["الفراغ الثامن على خط الإبط الخلفي",0,"قريب من الحجاب والكبد والطحال: خطر إصابة.",15]],why:"المثلث الآمن: أمام الحافة الأمامية لعضلة الظهر العريضة، خلف حافة الصدري الكبير، فوق خط الحلمة، بالفراغ الرابع أو الخامس.",fx:{site:1}},
+{t:"التخدير الموضعي",q:"كيف بتخدّر؟",o:[["ليدوكائين موضعي: الجلد ثم الأنسجة وصولاً للجنب الجداري",1],["بدون تخدير لتوفير الوقت",0,"الألم شديد وبيعمل رد فعل مضر. لازم تخدير.",10],["حقن كمية كبيرة جداً بدون حساب الجرعة",0,"لازم تحترم الجرعة القصوى للليدوكائين.",8]],why:"التخدير بطبقات (جلد، عضل، حواف الضلع، الجنب) بيخفف الألم بشكل كبير.",fx:{ps:1}},
+{t:"الشق الجلدي",q:"كيف بتبدأ؟",o:[["شق جلدي 2–3 سم بالمشرط بمحاذاة الضلع (فوق الضلع السفلي للفراغ)",1],["إدخال تروكار حاد بقوة مباشرة",0,"التروكار الحاد بيصيب الرئة والأوعية. نزف!",15,"bl"],["شق عمودي طويل 10 سم",0,"الشق الكبير بدون داعي.",5]],why:"الشق الصغير بمحاذاة الضلع كافي وبيعطي مسار للتشريح.",fx:{ps:2}},
+{t:"التشريح الكليل",q:"كيف بتوصل للجنب؟",o:[["تشريح كليل بالكلامب فوق الحد العلوي للضلع السفلي",1],["التشريح على الحد السفلي للضلع العلوي",0,"هناك الحزمة الوعائية العصبية! إصابة الشريان الوربي: نزف!",15,"bl"],["قص بالمقص مباشرة بدون رؤية",0,"التشريح الكليل أأمن.",8]],why:"المرور فوق الحد العلوي للضلع بيتجنب الحزمة الوعائية العصبية (وريد، شريان، عصب) تحت الحد السفلي للضلع العلوي.",fx:{ps:3}},
+{t:"دخول الجنب وفحص بالإصبع",q:"وصلت للجنب. شو بتعمل؟",o:[["اخترق الجنب بالكلامب، ثم أدخل إصبعك لتتأكد من عدم وجود التصاقات أو عضو",1],["أدخل الأنبوب مباشرة بدون فحص",0,"الفحص بالإصبع بيكشف الالتصاقات ومكان الرئة والحجاب.",12],["أدخل التروكار بقوة",0,"التروكار ما بيستعمل لإدخال الأنبوب.",10]],why:"فحص الإصبع بيتأكد من دخول الفراغ الجنبي وغياب الالتصاقات.",fx:{ps:4}},
+{t:"إدخال الأنبوب",q:"بأي اتجاه بتدخل الأنبوب؟",o:[["باتجاه القمة والخلف حتى تصير كل فتحات الأنبوب داخل الصدر",1],["باتجاه القاع",0,"للهواء: القمة. القاع للسوائل (نزف أو انصباب).",6],["بدون قياس العمق",0,"لازم الفتحات كلها داخل الصدر.",6]],why:"الأنبوب باتجاه القمة لأن الهواء بيتجمع للأعلى. حدث تفريغ للهواء وبدأت الرئة تتمدد.",fx:{ps:5,tube:1,pt:.2}},
+{t:"الوصل بنظام الصمام المائي",q:"كيف بتوصل الأنبوب؟",o:[["بصمام تحت الماء (underwater seal) تحت مستوى الصدر",1],["بكلامب على الأنبوب والانتظار",0,"ممنوع قفل الأنبوب أثناء تسرب الهواء: خطر توتر.",10],["بشفط عالي مباشرة",0,"الشفط العالي المبكر ممكن يضر. عادة صمام مائي أولاً.",8]],why:"الصمام المائي بيسمح بخروج الهواء ومنع رجوعه. فقاعات واهتزاز بالسائل. SpO₂ 98%.",fx:{dr:1,pt:.05,sp:98,hr:88}},
+{t:"التثبيت",q:"كيف بتثبّت الأنبوب؟",o:[["خياطة تثبيت وضمادة مانعة للهواء",1],["لصق خفيف فقط",0,"الأنبوب ممكن يخرج. لازم تثبيت بخياطة.",6],["ترك الأنبوب بدون تثبيت",0,"خطر خروجه ودخول هواء.",10]],why:"التثبيت بيمنع خروج الأنبوب ودخول الهواء.",fx:{sec:1}},
+{t:"الأشعة بعد التركيب",q:"متى بتتأكد من وضع الأنبوب؟",o:[["أشعة صدر بعد التركيب لتأكيد الوضع وتمدد الرئة",1],["بعد 3 أيام",0,"لازم أشعة مباشرة بعد التركيب.",8],["ما في داعي لأشعة",0,"الأشعة ضرورية للتأكد من الوضع.",10]],why:"الأنبوب بوضعه، والرئة متمددة تقريباً بالكامل.",fx:{}},
+{s:"المتابعة",t:"مراقبة الأنبوب",q:"كيف بتتابع المريض؟",o:[["مراقبة التأرجح والفقاعات، التسكين، الأكسجين، وبدون كلامب أثناء النقل",1],["كلامب الأنبوب للنقل",0,"ممنوع قفل أنبوب مع تسرب هواء.",12],["إزالة الأنبوب بعد ساعة",0,"بدري. لازم توقف التسرب وتأكد بالأشعة.",10]],why:"الفقاعات المستمرة بتعني تسرب هواء. ويُراجع الجراح إذا استمر أكثر من 5–7 أيام.",fx:{}},
+{t:"النصائح والوقاية",q:"قبل الخروج، شو بتنصحه؟",o:[["الإقلاع عن التدخين، تجنب الطيران والغوص حتى المراجعة، ومراجعة جراحية عند التكرار",1],["لا في أي نصائح",0,"النصائح ضرورية: احتمال التكرار حوالي 30%.",8],["العودة للغوص فوراً",0,"الغوص والطيران ممنوعين حتى الشفاء والمراجعة.",12]],why:"الإقلاع عن التدخين بيقلل التكرار. عند التكرار بتنفع الجراحة (تثبيت الجنب).",fx:{}}];
+const EV={
+tn:{t:"ريح صدرية توترية",ok:"تفرّغ الضغط مؤقتاً بالإبرة. الإبرة حل مؤقت، لازم الآن أنبوب صدري كحل نهائي.",steps:[{q:"تدهور سريع! ضغط 78/50، SpO₂ 80%، الرغامى منحرفة لليمين، أوردة العنق منتفخة (JVD). أول إجراء؟",o:[["إبرة مزيلة للضغط فوراً (الفراغ الثاني خط الترقوة أو الرابع/الخامس أمام الإبط)",1],["أشعة صدر للتأكد",0,"التوتر الصدري تشخيص سريري. الأشعة تأخير قاتل.",15],["سوائل وريدية فقط",0,"السوائل ما بتحل المشكلة الميكانيكية.",10],["تنبيب وتهوية بالضغط الإيجابي",0,"الضغط الإيجابي بيزيد التوتر قبل التفريغ.",15]]}]},
+bl:{t:"نزف",ok:"سيطرت على النزف. دم مفقود تقريباً: ",steps:[
+{q:"نزف غزير من الجرح! أول إجراء؟",o:[["ضغط مباشر على الجرح وتوقيف الإدخال وطلب المساعدة",1],["متابعة الإدخال بسرعة",0,"بيزيد الأذية والنزف.",10],["لصق ضمادة فقط",0,"الضغط المباشر أولاً، مو ضمادة سطحية.",10]]},
+{q:"النزف مستمر رغم الضغط. شو بتضيف؟",o:[["السيطرة على الوعاء (ربط أو خياطة) أو استدعاء جراح الصدر، ثم إعادة المحاولة فوق الحد العلوي للضلع",1],["زيادة الضغط فقط وتجاهل المصدر",0,"لازم تحديد المصدر والسيطرة عليه.",10],["إكمال الإجراء رغم النزف",0,"بيزيد خطر النزف الدموي بالجنب.",12]]}]}};
+const TEACH=["الريح الصدرية العفوية الأولية: شباب طوال ونحاف، ومدخنين غالباً. احتمال التكرار حوالي 30%.","الريح التوترية تشخيص سريري: إبرة مزيلة للضغط فوراً، ثم أنبوب صدري كحل نهائي.","المثلث الآمن للأنبوب: الفراغ الرابع أو الخامس أمام خط الإبط المتوسط، فوق الحد العلوي للضلع السفلي لتجنب الحزمة الوعائية العصبية.","لا تقفل الأنبوب أثناء تسرب الهواء، والصمام المائي تحت مستوى الصدر.","أشعة بعد التركيب، وتجنب الطيران والغوص حتى المراجعة، وجراحة (تثبيت الجنب) عند التكرار."];
+let S,timer;
+const fresh=()=>({i:0,pen:0,errs:[],ev:null,state:"play",note:"",fb:null,pt:.35,sp:92,hr:108,tube:0,nd:0,site:0,ps:0,dr:0,sec:0,cxr:0,loss:0,hy:0,hm:0,vw:null,ord:[]});
+const cur=()=>S.ev?EV[S.ev.k].steps[S.ev.n]:STEPS[S.i];
+const mix=()=>{S.ord=cur().o.map((_,i)=>i).sort(()=>Math.random()-.5)};
+const bp=()=>Math.max(0,118-Math.floor(S.loss/12)-Math.floor(S.hy*.5));
+const spo=()=>Math.max(60,S.sp-Math.floor(S.hy*.15)),hrv=()=>Math.min(170,S.hr+Math.floor(S.hy*.5)+Math.floor(S.loss/10)),rr=()=>S.ev&&S.ev.k=="tn"?38:S.tube?18:24;
+function vit(){const b=bp(),sp=spo(),h=hrv();$("#vit").innerHTML=[[h,"HR ♥",h>115],[b+"/"+Math.round(b*.65),"BP",b<90],[sp+"%","SpO₂",sp<90],[rr(),"RR",rr()>30]].map(c=>`<div class="${c[2]?"w":""}"><b>${c[0]}</b><small>${c[1]}</small></div>`).join("")}
+/* ----- الصدر (تشريحي وأشعة) ----- */
+function chest(m){const x=m=="x",e=S.ev&&S.ev.k,tn=e=="tn",pt=tn?.85:S.pt,sh=tn?Math.min(1,.3+S.hy/45):0,sc=1-pt*.72,hx=-sh*24;
+const C=x?{bg:"#0a0a0a",cav:"#020202",lg:pt>.5?"#7a7a7a":"#3d3d3d",rl:"#3d3d3d",rib:"#9a9a9a",ht:"#d0d0d0",tr:"#161616",ln:"#f0f0f0",dia:"#bdbdbd",mk:"#7c7c7c"}:{bg:"#FBEDE8",cav:"#E4EEF4",lg:"#F3B6B0",rl:"#F3B6B0",rib:"#D9CDB5",ht:"#B84A4A",tr:"#7BA4C7",ln:"#fff",dia:"#C97A6E",mk:"none"};
+const mk=sx=>[0,1,2,3,4,5,6].map(i=>`<line x1="${sx}" y1="170" x2="${sx+(sx<160?-1:1)*(40+(i%3)*18)}" y2="${92+i*28}" stroke="${C.mk}" stroke-width="1.3"/>`).join("");
+let t=`<svg viewBox="0 0 320 340" role="img" aria-label="${x?"أشعة صدر":"رسم تشريحي للصدر"}"><rect width="320" height="340" fill="${C.bg}"/>`;
+t+=`<path d="M152 60Q70 56 48 130Q40 215 80 285Q120 305 152 292Z" fill="${C.cav}" stroke="${C.dia}" stroke-width="1.5"/><path d="M168 60Q250 56 272 130Q280 215 240 285Q200 305 168 292Z" fill="${C.cav}" stroke="${C.dia}" stroke-width="1.5"/>`;
+t+=`<path d="M154 68Q82 66 60 130Q54 212 88 272Q122 286 154 276Z" fill="${C.rl}" stroke="${C.ln}" stroke-width="1.2"/>${mk(150)}`;
+t+=`<g transform="translate(${170+hx} 170) scale(${sc}) translate(-170 -170)"><path d="M166 68Q238 66 258 130Q264 212 230 272Q198 286 166 276Z" fill="${C.lg}" stroke="${C.ln}" stroke-width="${x?2.4:2}"/>${mk(170)}</g>`;
+for(let i=0;i<6;i++){const y=64+i*28;t+=`<path d="M150 ${y}Q80 ${y-6} 44 ${y+46}M170 ${y}Q240 ${y-6} 276 ${y+46}" stroke="${C.rib}" stroke-width="5" fill="none" opacity="${x?.55:.8}"/>`}
+t+=`<path d="M64 56Q160 38 256 56" stroke="${C.rib}" stroke-width="6" fill="none" opacity=".85"/>`;
+t+=`<rect x="${152+hx}" y="96" width="36" height="64" rx="14" fill="${C.ht}" opacity="${x?.85:1}"/><ellipse cx="${172+hx}" cy="215" rx="34" ry="42" fill="${C.ht}" opacity="${x?.9:1}" stroke="${x?"none":"#8E2F2F"}"/>`;
+t+=`<path d="M160 34L${160-sh*18} 110L${126-sh*10} 150M${160-sh*18} 110L${194-sh*10} 150" stroke="${C.tr}" stroke-width="${x?9:7}" fill="none" stroke-linecap="round"/>`;
+t+=`<path d="M50 282Q100 250 152 270M168 270Q220 ${252+sh*16} 270 282" stroke="${C.dia}" stroke-width="3" fill="none"/>`;
+if(S.tube){t+=`<path d="M270 214C246 226 226 180 214 112" stroke="${x?"#fff":"#5E6772"}" stroke-width="${x?2.5:4}" fill="none"/><path d="M270 214L298 240" stroke="${x?"#fff":"#5E6772"}" stroke-width="3"/>`;if(!x)t+=`<rect x="284" y="240" width="30" height="40" rx="4" fill="#CFE3F0" stroke="#8FAAC2"/><rect x="286" y="262" width="26" height="16" fill="#8FC1E0"/>${S.dr?`<circle class="pulse" cx="296" cy="266" r="3" fill="#fff"/>`:""}`}
+if(S.nd&&!x)t+=`<path d="M214 96L222 114" stroke="#222" stroke-width="2"/><circle cx="214" cy="96" r="3" fill="#C0211B"/>`;
+if(S.site&&!x&&!S.tube)t+=`<circle class="pulse" cx="270" cy="208" r="8" fill="none" stroke="#1F7A55" stroke-width="2.5"/>`;
+if(x)t+=`<g fill="#f0f0f0" font-size="14"><text x="14" y="30">R</text><text x="296" y="30">L</text></g>`;
+else{t+=`<g font-size="10" fill="#6b3a34"><text x="62" y="196">رئة يمنى</text><text x="196" y="60">رغامى</text>${pt>.1?`<text x="228" y="190">هواء بالجنب</text>`:""}<text x="190" y="150">رئة يسرى</text><text x="96" y="318">حجاب</text></g>`;if(tn)t+=`<path class="pulse" d="M196 30Q206 22 214 32" stroke="#3057B5" stroke-width="4" fill="none"/>`}
+return t+"</svg>"}
+/* ----- منظر الإجراء ----- */
+function proc(){const ps=S.ps,e=S.ev&&S.ev.k,pt=e=="tn"?.85:S.pt,top=178+pt*70;
+let t=`<svg viewBox="0 0 320 340" role="img" aria-label="مقطع جدار الصدر أثناء تركيب الأنبوب"><rect width="320" height="340" fill="#FBEDE8"/><rect y="20" width="320" height="14" fill="#E8B98F"/><rect y="34" width="320" height="46" fill="#F2D98A"/><rect y="80" width="320" height="40" fill="#B5504A"/><rect y="120" width="320" height="48" fill="#9E4A4A"/>`;
+t+=`<ellipse cx="72" cy="144" rx="52" ry="26" fill="#EAE0CC" stroke="#B8A98A"/><ellipse cx="248" cy="144" rx="52" ry="26" fill="#EAE0CC" stroke="#B8A98A"/>`;
+t+=`<circle cx="130" cy="140" r="4" fill="#4F6FD0"/><circle cx="130" cy="150" r="4" fill="#C0211B"/><circle cx="130" cy="160" r="4" fill="#E8D24A"/>`;
+t+=`<rect y="168" width="320" height="3" fill="#F4C7C3"/><rect y="171" width="320" height="${Math.max(0,top-171)}" fill="#E4EEF4"/><path d="M0 ${top}Q80 ${top-12} 160 ${top}T320 ${top}V340H0Z" fill="#F3B6B0"/>`;
+if(ps>=1)t+=`<rect x="176" y="20" width="22" height="150" fill="#FFE98A" opacity=".45"/>`;
+if(ps>=2)t+=`<rect x="182" y="20" width="10" height="14" fill="#2a1414"/>`;
+if(ps>=3)t+=`<rect x="184" y="34" width="6" height="134" fill="#2a1414"/>`;
+if(ps>=4)t+=`<rect x="184" y="168" width="6" height="8" fill="#2a1414"/>`;
+if(ps>=5){t+=`<path d="M188 8L188 176Q186 198 150 206L84 208" stroke="#6B7480" stroke-width="9" fill="none" stroke-linecap="round"/><circle cx="110" cy="208" r="2" fill="#fff"/><circle cx="130" cy="207" r="2" fill="#fff"/>`;if(S.dr)t+=`<path d="M188 8Q220 -4 262 8" stroke="#6B7480" stroke-width="5" fill="none"/><rect x="262" y="2" width="34" height="16" rx="3" fill="#CFE3F0" stroke="#8FAAC2"/>`}
+if(S.sec)t+=`<rect x="170" y="14" width="40" height="8" fill="#fff" opacity=".9"/>`;
+if(e=="bl")t+=`<circle class="pulse" cx="130" cy="150" r="16" fill="#C0211B" opacity=".75"/>`;
+t+=`<g font-size="10" fill="#3a2a22"><text x="4" y="31">جلد</text><text x="4" y="62">دهن</text><text x="4" y="104">عضلات</text><text x="40" y="148">ضلع علوي</text><text x="218" y="148">ضلع سفلي</text><text x="136" y="186">جنب جداري</text><text x="4" y="236">فراغ جنبي (هواء)</text><text x="4" y="320">رئة</text><text x="100" y="178" fill="#1F7A55">مسار آمن فوق الضلع السفلي</text></g><text x="136" y="132" font-size="9" fill="#fff">حزمة وعائية عصبية</text></svg>`;
+return t}
+function scene(){const e=S.ev&&S.ev.k,v=S.vw||(e?(e=="bl"?"p":"a"):S.i<=1?"a":S.i<=3?(S.cxr?"x":"a"):S.i<=5?"a":S.i<=12?"p":S.i==13?"x":"a");
+return `<div class="tabs">${[["a","تشريحي"],["x","أشعة"],["p","الإجراء"]].map(b=>`<button aria-pressed="${v==b[0]}" onclick="vw('${b[0]}')">${b[1]}</button>`).join("")}</div>`+(v=="p"?proc():chest(v))}
+function vw(k){S.vw=k;render()}
+function panel(){const c=S.state=="play"||S.state=="fb"?cur():0;
+if(S.state=="dead")return `<div class="card alert"><div class="big bad">فشل</div><p>${S.dm}</p></div><button class="go" onclick="start()">أعد المحاولة</button>`;
+if(S.state=="done"){const sc=Math.max(0,100-S.pen-Math.floor(S.loss/25)-Math.floor(S.hm/5)),e=[...new Set(S.errs)];
+return `<div class="card"><div class="big ${sc>=75?"good":"bad"}">${sc}/100</div><p>دم مفقود: ${S.loss} مل. أخطاء: ${e.length}.</p>${e.length?`<p><b>أخطاؤك:</b></p><ul>${e.map(x=>`<li>${x}</li>`).join("")}</ul>`:`<p class="good">ما غلطت بأي خطوة!</p>`}<p><b>نقاط تعليمية:</b></p><ul>${TEACH.map(x=>`<li>${x}</li>`).join("")}</ul></div><button class="go" onclick="start()">أعد الحالة</button>`}
+const st=STEPS[S.i],ev=S.ev,I=ev?EV[ev.k].t+"!":st.s?st.s+" — "+st.t:st.t;
+let h=`<div class="card ${ev?"alert":""}"><div class="st">${ev?"طارئ":"الخطوة "+(S.i+1)+" من "+STEPS.length}: ${I}</div>`;
+if(S.state=="fb")h+=`<p class="good"><b>صح. </b>${S.fb}</p>`;else{h+=`<p class="q">${c.q}</p>`;if(ev&&ev.k=="tn")h+=`<div class="bar"><i style="width:${Math.min(100,S.hy)}%"></i></div><div class="st">تدهور المريض</div>`}
+if(S.note)h+=`<p class="bad" role="status">${S.note}</p>`;
+h+="</div>";
+if(S.state=="fb")h+=`<button class="go" onclick="next()">${S.i==STEPS.length-1?"إنهاء":"الخطوة التالية"}</button>`;
+else h+=S.ord.map(k=>`<button class="opt" onclick="pick(${k})">${c.o[k][0]}</button>`).join("");
+return h}
+const render=()=>{vit();$("#scene").innerHTML=scene();$("#panel").innerHTML=panel()};
+function pick(k){const c=cur(),o=c.o[k];S.note="";
+if(o[1]){if(S.ev){S.ev.n++;if(S.ev.n>=EV[S.ev.k].steps.length)return endEv();mix();return render()}
+Object.assign(S,c.fx);S.fb=c.why;S.state="fb";return render()}
+S.pen+=o[3];S.errs.push((S.ev?EV[S.ev.k].t:c.t)+": "+o[2]);S.note=o[2];
+if(S.ev){if(S.ev.k=="tn"){S.hy+=10;S.hm=Math.max(S.hm,S.hy)}else S.loss+=100}
+else if(o[4]){S.ev={k:o[4],n:0};mix();clearInterval(timer);timer=setInterval(tick,1000)}
+render()}
+function endEv(){clearInterval(timer);const k=S.ev.k,c=STEPS[S.i];S.ev=null;Object.assign(S,c.fx);if(k=="tn"){S.nd=1;S.pt=.45;S.sp=94;S.hy=0}S.fb=EV[k].ok+(k=="bl"?S.loss+" مل.":"");S.state="fb";render()}
+function tick(){const e=S.ev;if(!e){clearInterval(timer);return}
+if(e.k=="tn"){S.hy+=3;S.hm=Math.max(S.hm,S.hy);if(S.hy>=100)return die("تدهور المريض بسبب ريح صدرية توترية لم تُعالج بسرعة. التشخيص سريري: إبرة مزيلة للضغط فوراً ثم أنبوب صدري.")}
+else{S.loss+=20;if(bp()<60)return die("فقد المريض كمية كبيرة من الدم بسبب إصابة وعاء وربي أو رئة. الضغط المباشر والسيطرة السريعة، وتجنب الحد السفلي للضلع.")}
+vit();const b=$("#panel .bar i");if(b)b.style.width=Math.min(100,S.hy)+"%"}
+function die(m){clearInterval(timer);S.ev=null;S.state="dead";S.dm=m;render()}
+function next(){S.i++;S.fb=null;S.note="";if(S.i>=STEPS.length){S.i=STEPS.length-1;S.state="done"}else{S.state="play";mix()}render();window.scrollTo({top:0})}
+function start(){clearInterval(timer);S=fresh();mix();render();window.scrollTo({top:0})}
+start();
+</script>
+</body>
+</html>
