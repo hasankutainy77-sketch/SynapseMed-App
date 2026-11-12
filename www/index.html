@@ -1,9 +1,11 @@
-<!DOCTYPE html><html lang="ar" dir="rtl">
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="theme-color" content="#0b1220">
 <title>SynapseMed | Medical Simulations</title>
+
 <style>
 :root {
   --bg:#080f1c;--panel:#101b2c;--panel2:#142238;
@@ -22,6 +24,7 @@ button{cursor:pointer}
 body:not(.authenticated) header,
 body:not(.authenticated) main,
 body:not(.authenticated) .bottom-nav{display:none!important}
+
 .auth-screen{
   min-height:100vh;display:flex;align-items:center;justify-content:center;
   padding:24px 16px;
@@ -68,6 +71,7 @@ body.authenticated .auth-screen{display:none}
 .auth-message.error{background:rgba(255,85,85,.1);color:#ff9b9b;border:1px solid rgba(255,85,85,.2)}
 .auth-message.success{background:rgba(36,214,193,.1);color:var(--teal);border:1px solid rgba(36,214,193,.2)}
 .auth-foot{text-align:center;color:var(--muted);font-size:11px;margin-top:20px;line-height:1.8}
+
 header{padding:24px 0 20px;border-bottom:1px solid var(--border)}
 .header-content{display:flex;align-items:center;justify-content:space-between;gap:12px}
 .brand{display:flex;align-items:center;gap:12px}
@@ -152,40 +156,55 @@ footer strong{color:var(--teal)}
 @media(min-width:650px){.simulator-list{grid-template-columns:1fr 1fr}}
 </style>
 </head>
-<body><section class="auth-screen">
+
+<body>
+
+<section class="auth-screen">
   <div class="auth-card">
     <div class="auth-brand">
       <div class="auth-logo">S</div>
       <h1>SynapseMed</h1>
       <p>MEDICAL SIMULATION PLATFORM</p>
     </div>
+
     <div class="auth-tabs">
       <button class="auth-tab active" type="button" data-auth-tab="login">تسجيل الدخول</button>
       <button class="auth-tab" type="button" data-auth-tab="register">إنشاء حساب</button>
     </div>
+
     <form class="auth-form active" id="loginForm">
       <label for="loginEmail">البريد الإلكتروني</label>
       <input id="loginEmail" type="email" autocomplete="email" placeholder="name@example.com" required>
+
       <label for="loginPassword">كلمة المرور</label>
       <input id="loginPassword" type="password" autocomplete="current-password" placeholder="كلمة المرور" required>
+
       <button class="auth-submit" type="submit">دخول إلى التطبيق</button>
     </form>
+
     <form class="auth-form" id="registerForm">
       <label for="registerEmail">البريد الإلكتروني</label>
       <input id="registerEmail" type="email" autocomplete="email" placeholder="name@example.com" required>
+
       <label for="registerPassword">كلمة المرور</label>
       <input id="registerPassword" type="password" autocomplete="new-password" minlength="8" placeholder="8 أحرف على الأقل" required>
+
       <label for="confirmPassword">تأكيد كلمة المرور</label>
       <input id="confirmPassword" type="password" autocomplete="new-password" minlength="8" placeholder="أعد كتابة كلمة المرور" required>
+
       <button class="auth-submit" type="submit">إنشاء حساب طالب</button>
     </form>
+
     <div class="auth-message" id="authMessage" role="status"></div>
+
     <div class="auth-foot">
       إنشاء الحساب لا يمنح صلاحية الدخول مباشرة.<br>
       يجب انتظار موافقة إدارة SynapseMed.
     </div>
   </div>
-</section><header>
+</section>
+
+<header>
   <div class="container header-content">
     <div class="brand">
       <div class="logo">S</div>
@@ -194,55 +213,68 @@ footer strong{color:var(--teal)}
         <div class="brand-subtitle">MEDICAL SIMULATION PLATFORM</div>
       </div>
     </div>
+
     <div class="header-actions">
       <div class="version" id="accountRole">VERSION 1.0</div>
       <button class="logout-btn" id="logoutButton" type="button">خروج ↗</button>
     </div>
   </div>
-</header><main class="container">
+</header>
+
+<main class="container">
   <section class="hero">
     <div class="hero-label">LEARN • PRACTICE • MASTER</div>
     <h1>تعلّم الطب<br>من خلال <span>المحاكاة</span></h1>
     <p>بيئة تعليمية تفاعلية تساعدك على تطوير مهاراتك السريرية والجراحية من خلال تجارب محاكاة واقعية.</p>
   </section>
+
   <section class="stats">
     <div class="stat-card">
       <div class="stat-top"><span class="stat-icon">🧠</span></div>
       <div class="stat-number" id="totalCount">4</div>
       <div class="stat-label">محاكاة تعليمية</div>
     </div>
+
     <div class="stat-card">
       <div class="stat-top"><span class="stat-icon">⭐</span></div>
       <div class="stat-number" id="favoriteCount">0</div>
       <div class="stat-label">المحاكاة المفضلة</div>
     </div>
   </section>
+
   <div class="search-box">
     <span class="search-icon">⌕</span>
     <input id="searchInput" type="search" placeholder="ابحث عن محاكاة..." autocomplete="off">
   </div>
+
   <div class="filters" id="filters">
     <button class="filter-btn active" data-category="all">الكل</button>
     <button class="filter-btn" data-category="clinical">سريرية</button>
     <button class="filter-btn" data-category="surgery">جراحية</button>
     <button class="filter-btn" data-category="emergency">إسعافية</button>
   </div>
+
   <div class="section-heading">
     <h2 id="sectionTitle">المحاكاة المتاحة</h2>
     <span class="result-count" id="resultCount">4 محاكاة</span>
   </div>
+
   <section class="simulator-list" id="simulatorList"></section>
+
   <div class="empty-state" id="emptyState">
     <div>🔎</div>
     <h3>لم نعثر على نتائج</h3>
     <p>جرّب البحث بكلمات أخرى.</p>
   </div>
+
   <footer>
     <strong>SynapseMed</strong><br>
     A smarter way to learn clinical medicine.<br>
     © 2026 SynapseMed. All rights reserved.
   </footer>
-</main><nav class="bottom-nav">
+</main>
+
+<nav class="bottom-nav">
   <button class="nav-btn active" data-view="home">
     <span>⌂</span><span>الرئيسية</span>
   </button>
@@ -252,7 +284,15 @@ footer strong{color:var(--teal)}
   <button class="nav-btn" data-view="about">
     <span>ⓘ</span><span>حول التطبيق</span>
   </button>
-</nav><!-- Supabase and Authentication --><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="js/supabase.js"></script><script src="js/auth.js"></script><script src="js/admin.js"></script><script>
+</nav>
+
+<!-- Supabase and Authentication -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/supabase.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/admin.js"></script>
+
+<script>
 "use strict";
 
 const authMessage = document.getElementById("authMessage");
@@ -275,157 +315,253 @@ authTabs.forEach(tab => {
   tab.addEventListener("click", () => {
     authTabs.forEach(item => item.classList.remove("active"));
     tab.classList.add("active");
+
     const selected = tab.dataset.authTab;
+
     loginForm.classList.toggle("active", selected === "login");
     registerForm.classList.toggle("active", selected === "register");
+
     clearAuthMessage();
   });
 });
 
 function setFormLoading(form, loading) {
   const button = form.querySelector(".auth-submit");
+
   button.disabled = loading;
-  button.textContent = loading ? "يرجى الانتظار..." :
-    (form.id === "loginForm" ? "دخول إلى التطبيق" : "إنشاء حساب طالب");
+
+  button.textContent = loading
+    ? "يرجى الانتظار..."
+    : (form.id === "loginForm"
+      ? "دخول إلى التطبيق"
+      : "إنشاء حساب طالب");
 }
 
+/* دخول المستخدم وإظهار لوحة الإدارة عند كونه مديراً */
 function enterApplication(role) {
   document.body.classList.add("authenticated");
-  accountRole.textContent = role === "admin" ? "ADMIN" : "STUDENT";
+
+  accountRole.textContent =
+    role === "admin" ? "ADMIN" : "STUDENT";
+
   render();
+
+  if (window.SynapseAdmin) {
+    window.SynapseAdmin.refresh();
+  }
 }
 
+/* فحص الجلسة عند فتح التطبيق */
 async function initializeAuthentication() {
   if (!window.SynapseAuth) {
-    showAuthMessage("تعذر تحميل نظام الحسابات. تحقق من الاتصال بالإنترنت وأعد المحاولة.", "error");
+    showAuthMessage(
+      "تعذر تحميل نظام الحسابات. تحقق من الاتصال بالإنترنت وأعد المحاولة.",
+      "error"
+    );
     return;
   }
+
   try {
     const result = await window.SynapseAuth.checkSession();
+
     if (!result.authenticated) {
       document.body.classList.remove("authenticated");
+
+      if (window.SynapseAdmin) {
+        window.SynapseAdmin.refresh();
+      }
+
       return;
     }
+
     if (!result.approved) {
       await window.SynapseAuth.logout();
+
       document.body.classList.remove("authenticated");
+
+      if (window.SynapseAdmin) {
+        window.SynapseAdmin.refresh();
+      }
+
       showAuthMessage(
         result.status === "rejected"
           ? "لم تتم الموافقة على حسابك. يرجى التواصل مع الإدارة."
           : "حسابك بانتظار موافقة الإدارة.",
         "error"
       );
+
       return;
     }
+
     enterApplication(result.role);
+
   } catch (error) {
     console.error("Authentication check failed:", error);
-    showAuthMessage("تعذر التحقق من الحساب. حاول مجدداً.", "error");
+
+    showAuthMessage(
+      "تعذر التحقق من الحساب. حاول مجدداً.",
+      "error"
+    );
   }
 }
 
+/* تسجيل الدخول */
 loginForm.addEventListener("submit", async event => {
   event.preventDefault();
+
   clearAuthMessage();
   setFormLoading(loginForm, true);
+
   try {
     const result = await window.SynapseAuth.login(
       document.getElementById("loginEmail").value,
       document.getElementById("loginPassword").value
     );
+
     if (!result.success) {
       if (result.status === "pending" || result.status === "rejected") {
         await window.SynapseAuth.logout();
       }
+
       showAuthMessage(result.message, "error");
       return;
     }
+
     showAuthMessage("تم تسجيل الدخول بنجاح.", "success");
+
     enterApplication(result.role);
+
   } catch (error) {
     console.error(error);
-    showAuthMessage("حدث خطأ أثناء تسجيل الدخول. حاول مجدداً.", "error");
+
+    showAuthMessage(
+      "حدث خطأ أثناء تسجيل الدخول. حاول مجدداً.",
+      "error"
+    );
+
   } finally {
     setFormLoading(loginForm, false);
   }
 });
 
+/* إنشاء حساب طالب */
 registerForm.addEventListener("submit", async event => {
   event.preventDefault();
+
   clearAuthMessage();
   setFormLoading(registerForm, true);
+
   try {
     const result = await window.SynapseAuth.register(
       document.getElementById("registerEmail").value,
       document.getElementById("registerPassword").value,
       document.getElementById("confirmPassword").value
     );
+
     if (!result.success) {
       showAuthMessage(result.message, "error");
       return;
     }
+
     if (result.status === "pending") {
       await window.SynapseAuth.logout();
-      showAuthMessage("تم إنشاء الحساب. حسابك الآن بانتظار موافقة الإدارة.", "success");
+
+      showAuthMessage(
+        "تم إنشاء الحساب. حسابك الآن بانتظار موافقة الإدارة.",
+        "success"
+      );
+
     } else {
-      showAuthMessage("تم إنشاء الحساب. تحقق من بريدك الإلكتروني لتأكيده، ثم انتظر موافقة الإدارة.", "success");
+      showAuthMessage(
+        "تم إنشاء الحساب. تحقق من بريدك الإلكتروني لتأكيده، ثم انتظر موافقة الإدارة.",
+        "success"
+      );
     }
+
   } catch (error) {
     console.error(error);
-    showAuthMessage("تعذر إنشاء الحساب. حاول مجدداً.", "error");
+
+    showAuthMessage(
+      "تعذر إنشاء الحساب. حاول مجدداً.",
+      "error"
+    );
+
   } finally {
     setFormLoading(registerForm, false);
   }
 });
 
+/* تسجيل الخروج */
 document.getElementById("logoutButton").addEventListener("click", async () => {
   const button = document.getElementById("logoutButton");
+
   button.disabled = true;
+
   try {
     await window.SynapseAuth.logout();
+
     document.body.classList.remove("authenticated");
+
     accountRole.textContent = "VERSION 1.0";
+
     loginForm.reset();
     registerForm.reset();
+
     clearAuthMessage();
+
+    /* إخفاء زر الإدارة بعد تسجيل الخروج */
+    if (window.SynapseAdmin) {
+      window.SynapseAdmin.refresh();
+    }
+
     window.scrollTo(0, 0);
+
   } catch (error) {
     console.error(error);
+
     alert("تعذر تسجيل الخروج. حاول مجدداً.");
+
   } finally {
     button.disabled = false;
   }
 });
 
 /* SIMULATORS */
-
 const simulators = [
   {
     id:"clinical",
     title:"الحالة السريرية: ألم البطن",
     description:"تقييم المريض وتحليل المعطيات والوصول إلى التشخيص.",
-    icon:"🩺",category:"clinical",categoryName:"سريرية",
+    icon:"🩺",
+    category:"clinical",
+    categoryName:"سريرية",
     path:"simulators/clinical-sim.html"
   },
   {
     id:"appendectomy",
     title:"استئصال الزائدة الدودية",
     description:"محاكاة جراحية تفاعلية ثنائية الأبعاد خطوة بخطوة.",
-    icon:"🏥",category:"surgery",categoryName:"جراحية",
+    icon:"🏥",
+    category:"surgery",
+    categoryName:"جراحية",
     path:"simulators/appendectomy-sim.html"
   },
   {
     id:"appendectomy3d",
     title:"استئصال الزائدة الدودية 3D",
     description:"استكشاف المحاكاة الجراحية باستخدام العرض ثلاثي الأبعاد.",
-    icon:"🧬",category:"surgery",categoryName:"جراحية",
+    icon:"🧬",
+    category:"surgery",
+    categoryName:"جراحية",
     path:"simulators/appendectomy-3d.html"
   },
   {
     id:"pneumothorax",
     title:"استرواح الصدر الضاغط",
     description:"التعرّف على الحالة الإسعافية وتدبيرها.",
-    icon:"🫁",category:"emergency",categoryName:"إسعافية",
+    icon:"🫁",
+    category:"emergency",
+    categoryName:"إسعافية",
     path:"simulators/pneumothorax-sim.html"
   }
 ];
@@ -443,8 +579,12 @@ let currentView = "home";
 
 function getFavorites() {
   try {
-    const value = JSON.parse(localStorage.getItem("synapsemed_favorites") || "[]");
+    const value = JSON.parse(
+      localStorage.getItem("synapsemed_favorites") || "[]"
+    );
+
     return Array.isArray(value) ? value : [];
+
   } catch (error) {
     return [];
   }
@@ -452,7 +592,11 @@ function getFavorites() {
 
 function saveFavorites(favorites) {
   try {
-    localStorage.setItem("synapsemed_favorites", JSON.stringify(favorites));
+    localStorage.setItem(
+      "synapsemed_favorites",
+      JSON.stringify(favorites)
+    );
+
   } catch (error) {
     console.warn("Could not save favorites.");
   }
@@ -460,11 +604,13 @@ function saveFavorites(favorites) {
 
 function toggleFavorite(id) {
   let favorites = getFavorites();
+
   if (favorites.includes(id)) {
     favorites = favorites.filter(item => item !== id);
   } else {
     favorites.push(id);
   }
+
   saveFavorites(favorites);
   render();
 }
@@ -503,22 +649,39 @@ function createCard(simulator, favorites) {
   const favorite = document.createElement("button");
   favorite.className = "favorite-btn";
   favorite.type = "button";
-  favorite.textContent = favorites.includes(simulator.id) ? "★" : "☆";
-  favorite.classList.toggle("active", favorites.includes(simulator.id));
-  favorite.setAttribute("aria-label",
-    favorites.includes(simulator.id) ? "إزالة من المفضلة" : "إضافة إلى المفضلة");
-  favorite.addEventListener("click", () => toggleFavorite(simulator.id));
+
+  favorite.textContent =
+    favorites.includes(simulator.id) ? "★" : "☆";
+
+  favorite.classList.toggle(
+    "active",
+    favorites.includes(simulator.id)
+  );
+
+  favorite.setAttribute(
+    "aria-label",
+    favorites.includes(simulator.id)
+      ? "إزالة من المفضلة"
+      : "إضافة إلى المفضلة"
+  );
+
+  favorite.addEventListener(
+    "click",
+    () => toggleFavorite(simulator.id)
+  );
 
   const open = document.createElement("button");
   open.className = "open-btn";
   open.type = "button";
   open.textContent = "ابدأ الآن";
+
   open.addEventListener("click", () => {
     window.location.href = simulator.path;
   });
 
   actions.append(favorite, open);
   card.append(icon, info, actions);
+
   return card;
 }
 
@@ -537,54 +700,91 @@ function render() {
 
   const filtered = simulators.filter(simulator => {
     const matchesCategory =
-      activeCategory === "all" || simulator.category === activeCategory;
+      activeCategory === "all" ||
+      simulator.category === activeCategory;
+
     const matchesSearch = normalizeText(
-      simulator.title + " " + simulator.description + " " + simulator.categoryName
+      simulator.title + " " +
+      simulator.description + " " +
+      simulator.categoryName
     ).includes(query);
+
     const matchesView =
-      currentView !== "favorites" || favorites.includes(simulator.id);
+      currentView !== "favorites" ||
+      favorites.includes(simulator.id);
+
     return matchesCategory && matchesSearch && matchesView;
   });
 
   list.replaceChildren();
-  filtered.forEach(simulator => list.appendChild(createCard(simulator, favorites)));
 
-  emptyState.style.display = filtered.length === 0 ? "block" : "none";
+  filtered.forEach(simulator => {
+    list.appendChild(createCard(simulator, favorites));
+  });
+
+  emptyState.style.display =
+    filtered.length === 0 ? "block" : "none";
+
   resultCount.textContent = filtered.length + " محاكاة";
+
   sectionTitle.textContent =
-    currentView === "favorites" ? "المحاكاة المفضلة" : "المحاكاة المتاحة";
+    currentView === "favorites"
+      ? "المحاكاة المفضلة"
+      : "المحاكاة المتاحة";
+
   updateStats();
 }
 
+/* تصفية التصنيفات */
 document.querySelectorAll(".filter-btn").forEach(button => {
   button.addEventListener("click", () => {
-    document.querySelectorAll(".filter-btn").forEach(item => item.classList.remove("active"));
+    document.querySelectorAll(".filter-btn").forEach(item => {
+      item.classList.remove("active");
+    });
+
     button.classList.add("active");
     activeCategory = button.dataset.category;
+
     render();
   });
 });
 
+/* البحث */
 searchInput.addEventListener("input", render);
 
+/* القائمة السفلية */
 document.querySelectorAll(".nav-btn").forEach(button => {
   button.addEventListener("click", () => {
     const view = button.dataset.view;
+
     if (view === "about") {
-      alert("SynapseMed\n\nمنصة تعليمية طبية تفاعلية تهدف إلى تطوير المهارات السريرية والجراحية من خلال المحاكاة.");
+      alert(
+        "SynapseMed\n\nمنصة تعليمية طبية تفاعلية تهدف إلى تطوير المهارات السريرية والجراحية من خلال المحاكاة."
+      );
+
       return;
     }
+
     currentView = view;
-    document.querySelectorAll(".nav-btn").forEach(item => item.classList.remove("active"));
+
+    document.querySelectorAll(".nav-btn").forEach(item => {
+      item.classList.remove("active");
+    });
+
     button.classList.add("active");
 
     if (currentView === "home") {
       activeCategory = "all";
       searchInput.value = "";
+
       document.querySelectorAll(".filter-btn").forEach(item => {
-        item.classList.toggle("active", item.dataset.category === "all");
+        item.classList.toggle(
+          "active",
+          item.dataset.category === "all"
+        );
       });
     }
+
     render();
   });
 });
@@ -592,5 +792,7 @@ document.querySelectorAll(".nav-btn").forEach(button => {
 /* START */
 render();
 initializeAuthentication();
-</script></body>
+
+</script>
+</body>
 </html>
