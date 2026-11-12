@@ -2,12 +2,9 @@
   "appId": "com.synapsemed.app",
   "appName": "SynapseMed",
   "webDir": "www",
-  "bundledWebRuntime": false,
   "server": {
+    "url": "https://hasankutainy77-sketch.github.io/SynapseMed-App/",
+    "cleartext": false,
     "androidScheme": "https"
-  },
-  "android": {
-    "allowMixedContent": false,
-    "backgroundColor": "#0B1220"
   }
 }
