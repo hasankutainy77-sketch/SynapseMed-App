@@ -4,16 +4,17 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="theme-color" content="#0b1220">
-<title>SynapseMed</title>
+<title>SynapseMed | Medical Simulations</title>
 
 <style>
 :root {
-  --bg: #0b1220;
-  --card: #121e30;
-  --card2: #17263b;
-  --teal: #21c7b7;
-  --text: #f2f6fc;
-  --muted: #91a3b8;
+  --bg: #080f1c;
+  --panel: #101b2c;
+  --panel2: #142238;
+  --teal: #24d6c1;
+  --teal2: #12a999;
+  --text: #f1f6fb;
+  --muted: #8da1b8;
   --border: rgba(255,255,255,.08);
 }
 
@@ -24,16 +25,39 @@
 }
 
 body {
-  background: var(--bg);
+  background:
+    radial-gradient(circle at 90% 0%, rgba(36,214,193,.10), transparent 32%),
+    var(--bg);
   color: var(--text);
-  font-family: Arial, sans-serif;
+  font-family: system-ui, -apple-system, sans-serif;
   min-height: 100vh;
+  padding-bottom: 95px;
 }
 
+button, input {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+.container {
+  width: min(100% - 32px, 900px);
+  margin: auto;
+}
+
+/* HEADER */
+
 header {
-  padding: 25px 20px 20px;
-  background: linear-gradient(145deg,#14283d,#0b1220);
+  padding: 24px 0 20px;
   border-bottom: 1px solid var(--border);
+}
+
+.header-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 
 .brand {
@@ -43,230 +67,363 @@ header {
 }
 
 .logo {
-  width: 48px;
-  height: 48px;
+  width: 46px;
+  height: 46px;
   border-radius: 15px;
-  background: linear-gradient(135deg,#21c7b7,#087c89);
   display: grid;
   place-items: center;
+  background: linear-gradient(135deg, #24d6c1, #087d85);
+  color: #06151d;
   font-size: 25px;
-  box-shadow: 0 5px 20px #21c7b733;
+  font-weight: 900;
+  box-shadow: 0 5px 25px rgba(36,214,193,.18);
 }
 
-.brand h1 {
-  font-size: 23px;
-  letter-spacing: .5px;
+.brand-name {
+  font-size: 21px;
+  font-weight: 800;
+  letter-spacing: .3px;
 }
 
-.brand p {
+.brand-subtitle {
   color: var(--muted);
-  font-size: 12px;
-  margin-top: 4px;
+  font-size: 11px;
+  margin-top: 2px;
 }
+
+.version {
+  border: 1px solid rgba(36,214,193,.25);
+  color: var(--teal);
+  background: rgba(36,214,193,.07);
+  padding: 7px 11px;
+  border-radius: 20px;
+  font-size: 11px;
+}
+
+/* HERO */
 
 .hero {
-  padding: 25px 20px;
+  padding: 32px 0 25px;
 }
 
-.hero h2 {
-  font-size: 23px;
-  margin-bottom: 9px;
+.hero-label {
+  color: var(--teal);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  margin-bottom: 12px;
 }
 
-.hero h2 span {
+.hero h1 {
+  font-size: clamp(27px, 7vw, 39px);
+  line-height: 1.35;
+  font-weight: 850;
+  margin-bottom: 12px;
+}
+
+.hero h1 span {
   color: var(--teal);
 }
 
 .hero p {
   color: var(--muted);
-  line-height: 1.8;
   font-size: 14px;
+  line-height: 1.9;
+  max-width: 540px;
 }
 
-.status {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  background: #123b39;
-  color: #5ee4d5;
-  border: 1px solid #1c625b;
-  padding: 8px 13px;
-  border-radius: 30px;
-  font-size: 12px;
-  margin-top: 17px;
-}
+/* STATS */
 
-.dot {
-  width: 7px;
-  height: 7px;
-  background: #40dfaa;
-  border-radius: 50%;
-}
-
-main {
-  padding: 5px 18px 100px;
-}
-
-.section-title {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin: 15px 0;
-}
-
-.section-title h3 {
-  font-size: 17px;
-}
-
-.section-title span {
-  font-size: 12px;
-  color: var(--muted);
-}
-
-.search {
-  width: 100%;
-  padding: 14px 16px;
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: 13px;
-  color: white;
-  font-size: 14px;
-  outline: none;
-  margin-bottom: 17px;
-}
-
-.search:focus {
-  border-color: var(--teal);
-}
-
-.filters {
-  display: flex;
-  gap: 8px;
-  overflow-x: auto;
-  padding-bottom: 15px;
-  scrollbar-width: none;
-}
-
-.filter {
-  white-space: nowrap;
-  border: 1px solid var(--border);
-  background: var(--card);
-  color: var(--muted);
-  padding: 9px 14px;
-  border-radius: 25px;
-  font-size: 12px;
-  cursor: pointer;
-}
-
-.filter.active {
-  background: #16413e;
-  color: #5ee4d5;
-  border-color: #277e74;
-}
-
-.grid {
+.stats {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(2, 1fr);
   gap: 12px;
+  margin-bottom: 27px;
 }
 
-.sim-card {
-  position: relative;
-  min-height: 190px;
-  padding: 16px 13px;
-  background: linear-gradient(150deg,var(--card2),var(--card));
+.stat-card {
+  background: linear-gradient(145deg, var(--panel2), var(--panel));
   border: 1px solid var(--border);
   border-radius: 17px;
+  padding: 17px;
+}
+
+.stat-top {
   display: flex;
-  flex-direction: column;
-  cursor: pointer;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.stat-icon {
+  font-size: 21px;
+}
+
+.stat-number {
+  font-size: 25px;
+  font-weight: 850;
+  color: var(--teal);
+  margin-top: 9px;
+}
+
+.stat-label {
+  color: var(--muted);
+  font-size: 12px;
+  margin-top: 3px;
+}
+
+/* SEARCH */
+
+.search-box {
+  position: relative;
+  margin-bottom: 20px;
+}
+
+.search-box input {
+  width: 100%;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 15px 45px 15px 15px;
+  color: var(--text);
+  outline: none;
+  font-size: 14px;
   transition: .2s;
 }
 
+.search-box input:focus {
+  border-color: var(--teal);
+  box-shadow: 0 0 0 3px rgba(36,214,193,.08);
+}
+
+.search-box input::placeholder {
+  color: #71849a;
+}
+
+.search-icon {
+  position: absolute;
+  right: 16px;
+  top: 13px;
+  font-size: 19px;
+}
+
+/* FILTERS */
+
+.filters {
+  display: flex;
+  gap: 9px;
+  overflow-x: auto;
+  padding: 2px 0 16px;
+  scrollbar-width: none;
+}
+
+.filters::-webkit-scrollbar {
+  display: none;
+}
+
+.filter-btn {
+  white-space: nowrap;
+  border: 1px solid var(--border);
+  background: var(--panel);
+  color: var(--muted);
+  padding: 9px 16px;
+  border-radius: 30px;
+  font-size: 12px;
+  transition: .2s;
+}
+
+.filter-btn.active {
+  background: rgba(36,214,193,.13);
+  border-color: var(--teal);
+  color: var(--teal);
+  font-weight: 700;
+}
+
+/* SECTION */
+
+.section-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 8px 0 15px;
+}
+
+.section-heading h2 {
+  font-size: 18px;
+  font-weight: 800;
+}
+
+.result-count {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+/* SIMULATOR CARDS */
+
+.simulator-list {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 13px;
+}
+
+.sim-card {
+  background: linear-gradient(135deg, #142238, #0e192a);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 17px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  transition: transform .2s, border-color .2s;
+}
+
 .sim-card:active {
-  transform: scale(.97);
+  transform: scale(.985);
 }
 
 .sim-icon {
-  width: 47px;
-  height: 47px;
+  width: 58px;
+  height: 58px;
+  min-width: 58px;
   display: grid;
   place-items: center;
-  background: #1c384b;
-  border-radius: 14px;
-  font-size: 25px;
-  margin-bottom: 13px;
+  background: rgba(36,214,193,.09);
+  border: 1px solid rgba(36,214,193,.13);
+  border-radius: 16px;
+  font-size: 27px;
 }
 
-.sim-card h4 {
-  font-size: 14px;
-  line-height: 1.6;
-  margin-bottom: 7px;
+.sim-info {
+  flex: 1;
+  min-width: 0;
 }
 
-.sim-card p {
+.sim-info h3 {
+  font-size: 15px;
+  font-weight: 750;
+  margin-bottom: 6px;
+}
+
+.sim-info p {
   color: var(--muted);
   font-size: 11px;
-  line-height: 1.6;
-  flex-grow: 1;
+  line-height: 1.7;
 }
 
-.sim-footer {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-top: 13px;
-}
-
-.sim-type {
+.sim-tag {
+  display: inline-block;
+  margin-top: 8px;
+  padding: 4px 9px;
+  border-radius: 20px;
+  background: rgba(36,214,193,.08);
   color: var(--teal);
   font-size: 10px;
 }
 
-.open-arrow {
-  color: var(--teal);
-  font-size: 19px;
+.sim-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
 }
 
-.empty {
-  grid-column: 1/-1;
-  text-align: center;
-  color: var(--muted);
-  padding: 40px 10px;
+.favorite-btn {
+  border: 0;
+  background: transparent;
+  color: #71849a;
+  font-size: 22px;
+  padding: 3px;
 }
+
+.favorite-btn.active {
+  color: #ffc65a;
+}
+
+.open-btn {
+  background: var(--teal);
+  color: #071b20;
+  border: 0;
+  border-radius: 10px;
+  padding: 8px 12px;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+/* EMPTY STATE */
+
+.empty-state {
+  display: none;
+  text-align: center;
+  padding: 45px 15px;
+  color: var(--muted);
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 17px;
+}
+
+.empty-state div {
+  font-size: 35px;
+  margin-bottom: 12px;
+}
+
+.empty-state h3 {
+  color: var(--text);
+  margin-bottom: 7px;
+}
+
+/* FOOTER */
 
 footer {
-  position: fixed;
-  bottom: 0;
-  width: 100%;
-  background: rgba(11,18,32,.96);
-  border-top: 1px solid var(--border);
-  padding: 13px 10px;
-  display: flex;
-  justify-content: space-around;
-  backdrop-filter: blur(15px);
-}
-
-footer button {
-  background: none;
-  border: none;
+  text-align: center;
+  padding: 30px 0 20px;
   color: var(--muted);
   font-size: 11px;
-  cursor: pointer;
+  line-height: 2;
 }
 
-footer button span {
-  display: block;
-  font-size: 20px;
-  margin-bottom: 5px;
-}
-
-footer button.active {
+footer strong {
   color: var(--teal);
 }
 
-@media (max-width: 350px) {
-  .grid { grid-template-columns: 1fr; }
+/* BOTTOM NAV */
+
+.bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 10;
+  background: rgba(9,17,30,.95);
+  backdrop-filter: blur(15px);
+  border-top: 1px solid var(--border);
+  display: flex;
+  justify-content: space-around;
+  padding: 12px 8px calc(12px + env(safe-area-inset-bottom));
+}
+
+.nav-btn {
+  background: transparent;
+  border: 0;
+  color: var(--muted);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  min-width: 65px;
+}
+
+.nav-btn span:first-child {
+  font-size: 20px;
+}
+
+.nav-btn.active {
+  color: var(--teal);
+}
+
+@media (min-width: 650px) {
+  .simulator-list {
+    grid-template-columns: 1fr 1fr;
+  }
 }
 </style>
 </head>
@@ -274,220 +431,378 @@ footer button.active {
 <body>
 
 <header>
-  <div class="brand">
-    <div class="logo">✚</div>
-    <div>
-      <h1>SynapseMed</h1>
-      <p>Medical Simulation Platform</p>
+  <div class="container header-content">
+    <div class="brand">
+      <div class="logo">S</div>
+      <div>
+        <div class="brand-name">SynapseMed</div>
+        <div class="brand-subtitle">MEDICAL SIMULATION PLATFORM</div>
+      </div>
     </div>
+    <div class="version">VERSION 1.0</div>
   </div>
 </header>
 
-<section class="hero">
-  <h2>تعلم الطب <span>بالتجربة</span></h2>
-  <p>
-    بيئة تعليمية تفاعلية لمحاكاة الحالات السريرية
-    والإجراءات الطبية والعمليات الجراحية.
-  </p>
-  <div class="status">
-    <span class="dot"></span>
-    المنصة جاهزة للعمل
+<main class="container">
+
+  <section class="hero">
+    <div class="hero-label">LEARN • PRACTICE • MASTER</div>
+    <h1>تعلّم الطب<br>من خلال <span>المحاكاة</span></h1>
+    <p>
+      بيئة تعليمية تفاعلية تساعدك على تطوير مهاراتك السريرية
+      والجراحية من خلال تجارب محاكاة واقعية.
+    </p>
+  </section>
+
+  <section class="stats">
+    <div class="stat-card">
+      <div class="stat-top">
+        <span class="stat-icon">🧠</span>
+      </div>
+      <div class="stat-number" id="totalCount">4</div>
+      <div class="stat-label">محاكاة تعليمية</div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-top">
+        <span class="stat-icon">⭐</span>
+      </div>
+      <div class="stat-number" id="favoriteCount">0</div>
+      <div class="stat-label">المحاكاة المفضلة</div>
+    </div>
+  </section>
+
+  <div class="search-box">
+    <span class="search-icon">⌕</span>
+    <input
+      id="searchInput"
+      type="search"
+      placeholder="ابحث عن محاكاة..."
+      autocomplete="off"
+    >
   </div>
-</section>
 
-<main>
-
-  <div class="section-title">
-    <h3>المحاكيات الطبية</h3>
-    <span id="count">4 محاكيات</span>
+  <div class="filters" id="filters">
+    <button class="filter-btn active" data-category="all">الكل</button>
+    <button class="filter-btn" data-category="clinical">سريرية</button>
+    <button class="filter-btn" data-category="surgery">جراحية</button>
+    <button class="filter-btn" data-category="emergency">إسعافية</button>
   </div>
 
-  <input
-    id="search"
-    class="search"
-    type="search"
-    placeholder="ابحث عن محاكاة طبية..."
-  >
-
-  <div class="filters">
-    <button class="filter active" data-category="all">الكل</button>
-    <button class="filter" data-category="surgery">الجراحة</button>
-    <button class="filter" data-category="clinical">الحالات السريرية</button>
-    <button class="filter" data-category="emergency">الطوارئ</button>
-    <button class="filter" data-category="3d">ثلاثية الأبعاد</button>
+  <div class="section-heading">
+    <h2 id="sectionTitle">المحاكاة المتاحة</h2>
+    <span class="result-count" id="resultCount">4 محاكاة</span>
   </div>
 
-  <div class="grid" id="simulators"></div>
+  <section class="simulator-list" id="simulatorList"></section>
+
+  <div class="empty-state" id="emptyState">
+    <div>🔎</div>
+    <h3>لم نعثر على نتائج</h3>
+    <p>جرّب البحث بكلمات أخرى.</p>
+  </div>
+
+  <footer>
+    <strong>SynapseMed</strong><br>
+    A smarter way to learn clinical medicine.<br>
+    © 2026 SynapseMed. All rights reserved.
+  </footer>
 
 </main>
 
-<footer>
-  <button class="active">
+<nav class="bottom-nav">
+  <button class="nav-btn active" data-view="home">
     <span>⌂</span>
-    الرئيسية
+    <span>الرئيسية</span>
   </button>
-  <button id="favoritesBtn">
-    <span>♡</span>
-    المفضلة
+
+  <button class="nav-btn" data-view="favorites">
+    <span>☆</span>
+    <span>المفضلة</span>
   </button>
-  <button id="aboutBtn">
+
+  <button class="nav-btn" data-view="about">
     <span>ⓘ</span>
-    حول التطبيق
+    <span>حول التطبيق</span>
   </button>
-</footer>
+</nav>
 
 <script>
+"use strict";
+
+/* قائمة المحاكاة */
+
 const simulators = [
   {
     id: "clinical",
-    title: "حالة سريرية: ألم بطني حاد",
-    description: "تقييم مريض يعاني من ألم بطني والتوصل إلى التشخيص.",
+    title: "الحالة السريرية: ألم البطن",
+    description: "تقييم المريض وتحليل المعطيات والوصول إلى التشخيص.",
     icon: "🩺",
     category: "clinical",
-    type: "حالة سريرية",
-    file: "simulators/clinical-sim.html"
+    categoryName: "سريرية",
+    path: "simulators/clinical-sim.html"
   },
   {
     id: "appendectomy",
     title: "استئصال الزائدة الدودية",
-    description: "محاكاة تفاعلية لخطوات استئصال الزائدة الدودية.",
-    icon: "🔬",
+    description: "محاكاة جراحية تفاعلية ثنائية الأبعاد خطوة بخطوة.",
+    icon: "🏥",
     category: "surgery",
-    type: "جراحة 2D",
-    file: "simulators/appendectomy-sim.html"
+    categoryName: "جراحية",
+    path: "simulators/appendectomy-sim.html"
   },
   {
     id: "appendectomy3d",
-    title: "استئصال الزائدة بالمنظار",
-    description: "استكشاف تشريحي ومحاكاة جراحية ثلاثية الأبعاد.",
-    icon: "🧊",
-    category: "3d",
-    type: "محاكاة 3D",
-    file: "simulators/appendectomy-3d.html"
+    title: "استئصال الزائدة الدودية 3D",
+    description: "استكشاف المحاكاة الجراحية باستخدام العرض ثلاثي الأبعاد.",
+    icon: "🧬",
+    category: "surgery",
+    categoryName: "جراحية",
+    path: "simulators/appendectomy-3d.html"
   },
   {
     id: "pneumothorax",
     title: "استرواح الصدر الضاغط",
-    description: "محاكاة تشخيص وتدبير حالة إسعافية صدرية.",
+    description: "التعرّف على الحالة الإسعافية وتدبيرها.",
     icon: "🫁",
     category: "emergency",
-    type: "طوارئ",
-    file: "simulators/pneumothorax-sim.html"
+    categoryName: "إسعافية",
+    path: "simulators/pneumothorax-sim.html"
   }
 ];
 
-const container = document.getElementById("simulators");
-const search = document.getElementById("search");
-const count = document.getElementById("count");
+const list = document.getElementById("simulatorList");
+const searchInput = document.getElementById("searchInput");
+const emptyState = document.getElementById("emptyState");
+const totalCount = document.getElementById("totalCount");
+const favoriteCount = document.getElementById("favoriteCount");
+const resultCount = document.getElementById("resultCount");
+const sectionTitle = document.getElementById("sectionTitle");
 
-let selectedCategory = "all";
-let favoritesOnly = false;
+let activeCategory = "all";
+let currentView = "home";
+
+/* تخزين المفضلة بأمان */
 
 function getFavorites() {
   try {
-    return JSON.parse(localStorage.getItem("synapse_favorites") || "[]");
-  } catch {
+    const value = JSON.parse(
+      localStorage.getItem("synapsemed_favorites") || "[]"
+    );
+
+    return Array.isArray(value) ? value : [];
+  } catch (error) {
     return [];
   }
 }
 
-function render() {
-  const query = search.value.trim().toLowerCase();
-  const favorites = getFavorites();
-
-  const filtered = simulators.filter(sim => {
-    const matchesCategory =
-      selectedCategory === "all" ||
-      sim.category === selectedCategory;
-
-    const matchesSearch =
-      sim.title.toLowerCase().includes(query) ||
-      sim.description.toLowerCase().includes(query);
-
-    const matchesFavorite =
-      !favoritesOnly || favorites.includes(sim.id);
-
-    return matchesCategory && matchesSearch && matchesFavorite;
-  });
-
-  count.textContent = filtered.length + " محاكيات";
-
-  container.replaceChildren();
-
-  if (!filtered.length) {
-    const empty = document.createElement("div");
-    empty.className = "empty";
-    empty.textContent = "لا توجد محاكيات مطابقة للبحث.";
-    container.appendChild(empty);
-    return;
+function saveFavorites(favorites) {
+  try {
+    localStorage.setItem(
+      "synapsemed_favorites",
+      JSON.stringify(favorites)
+    );
+  } catch (error) {
+    console.warn("Could not save favorites.");
   }
-
-  filtered.forEach(sim => {
-    const card = document.createElement("article");
-    card.className = "sim-card";
-
-    const icon = document.createElement("div");
-    icon.className = "sim-icon";
-    icon.textContent = sim.icon;
-
-    const title = document.createElement("h4");
-    title.textContent = sim.title;
-
-    const description = document.createElement("p");
-    description.textContent = sim.description;
-
-    const footer = document.createElement("div");
-    footer.className = "sim-footer";
-
-    const type = document.createElement("span");
-    type.className = "sim-type";
-    type.textContent = sim.type;
-
-    const arrow = document.createElement("span");
-    arrow.className = "open-arrow";
-    arrow.textContent = "←";
-
-    footer.append(type, arrow);
-    card.append(icon, title, description, footer);
-
-    card.addEventListener("click", () => {
-      window.location.href = sim.file;
-    });
-
-    container.appendChild(card);
-  });
 }
 
-search.addEventListener("input", render);
+function toggleFavorite(id) {
+  let favorites = getFavorites();
 
-document.querySelectorAll(".filter").forEach(button => {
+  if (favorites.includes(id)) {
+    favorites = favorites.filter(item => item !== id);
+  } else {
+    favorites.push(id);
+  }
+
+  saveFavorites(favorites);
+  render();
+}
+
+/* تحديث الأرقام */
+
+function updateStats() {
+  totalCount.textContent = simulators.length;
+  favoriteCount.textContent = getFavorites().length;
+}
+
+/* إنشاء بطاقة محاكاة */
+
+function createCard(simulator, favorites) {
+  const card = document.createElement("article");
+  card.className = "sim-card";
+
+  const icon = document.createElement("div");
+  icon.className = "sim-icon";
+  icon.textContent = simulator.icon;
+
+  const info = document.createElement("div");
+  info.className = "sim-info";
+
+  const title = document.createElement("h3");
+  title.textContent = simulator.title;
+
+  const description = document.createElement("p");
+  description.textContent = simulator.description;
+
+  const tag = document.createElement("span");
+  tag.className = "sim-tag";
+  tag.textContent = simulator.categoryName;
+
+  info.append(title, description, tag);
+
+  const actions = document.createElement("div");
+  actions.className = "sim-actions";
+
+  const favorite = document.createElement("button");
+  favorite.className = "favorite-btn";
+  favorite.type = "button";
+  favorite.textContent = favorites.includes(simulator.id) ? "★" : "☆";
+  favorite.classList.toggle(
+    "active",
+    favorites.includes(simulator.id)
+  );
+  favorite.setAttribute(
+    "aria-label",
+    favorites.includes(simulator.id)
+      ? "إزالة من المفضلة"
+      : "إضافة إلى المفضلة"
+  );
+
+  favorite.addEventListener("click", () => {
+    toggleFavorite(simulator.id);
+  });
+
+  const open = document.createElement("button");
+  open.className = "open-btn";
+  open.type = "button";
+  open.textContent = "ابدأ الآن";
+
+  open.addEventListener("click", () => {
+    window.location.href = simulator.path;
+  });
+
+  actions.append(favorite, open);
+  card.append(icon, info, actions);
+
+  return card;
+}
+
+/* البحث والتصفية */
+
+function normalizeText(value) {
+  return value
+    .toLowerCase()
+    .replace(/[أإآ]/g, "ا")
+    .replace(/ة/g, "ه")
+    .replace(/ى/g, "ي")
+    .replace(/[\u064B-\u065F]/g, "")
+    .trim();
+}
+
+function render() {
+  const query = normalizeText(searchInput.value);
+  const favorites = getFavorites();
+
+  const filtered = simulators.filter(simulator => {
+    const matchesCategory =
+      activeCategory === "all" ||
+      simulator.category === activeCategory;
+
+    const matchesSearch =
+      normalizeText(
+        simulator.title + " " +
+        simulator.description + " " +
+        simulator.categoryName
+      ).includes(query);
+
+    const matchesView =
+      currentView !== "favorites" ||
+      favorites.includes(simulator.id);
+
+    return matchesCategory && matchesSearch && matchesView;
+  });
+
+  list.replaceChildren();
+
+  filtered.forEach(simulator => {
+    list.appendChild(createCard(simulator, favorites));
+  });
+
+  emptyState.style.display =
+    filtered.length === 0 ? "block" : "none";
+
+  resultCount.textContent = filtered.length + " محاكاة";
+
+  sectionTitle.textContent =
+    currentView === "favorites"
+      ? "المحاكاة المفضلة"
+      : "المحاكاة المتاحة";
+
+  updateStats();
+}
+
+/* أزرار التصنيف */
+
+document.querySelectorAll(".filter-btn").forEach(button => {
   button.addEventListener("click", () => {
-    document.querySelectorAll(".filter").forEach(b =>
-      b.classList.remove("active")
-    );
+    document.querySelectorAll(".filter-btn").forEach(item => {
+      item.classList.remove("active");
+    });
 
     button.classList.add("active");
-    selectedCategory = button.dataset.category;
-    favoritesOnly = false;
+    activeCategory = button.dataset.category;
     render();
   });
 });
 
-document.getElementById("favoritesBtn").addEventListener("click", () => {
-  favoritesOnly = !favoritesOnly;
+/* البحث */
 
-  document.getElementById("favoritesBtn")
-    .classList.toggle("active", favoritesOnly);
+searchInput.addEventListener("input", render);
 
-  render();
+/* شريط التنقل */
+
+document.querySelectorAll(".nav-btn").forEach(button => {
+  button.addEventListener("click", () => {
+    const view = button.dataset.view;
+
+    if (view === "about") {
+      alert(
+        "SynapseMed\n\n" +
+        "منصة تعليمية طبية تفاعلية تهدف إلى تطوير المهارات السريرية والجراحية من خلال المحاكاة."
+      );
+      return;
+    }
+
+    currentView = view;
+
+    document.querySelectorAll(".nav-btn").forEach(item => {
+      item.classList.remove("active");
+    });
+
+    button.classList.add("active");
+
+    if (currentView === "home") {
+      activeCategory = "all";
+      searchInput.value = "";
+
+      document.querySelectorAll(".filter-btn").forEach(item => {
+        item.classList.toggle(
+          "active",
+          item.dataset.category === "all"
+        );
+      });
+    }
+
+    render();
+  });
 });
 
-document.getElementById("aboutBtn").addEventListener("click", () => {
-  alert("SynapseMed\nInteractive Medical Simulation Platform\nVersion 1.0.0");
-});
+/* تشغيل الواجهة */
 
 render();
 </script>
 
 </body>
-  </html>
+</html>
