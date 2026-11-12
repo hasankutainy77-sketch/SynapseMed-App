@@ -1,263 +1,243 @@
-// ==========================================
-// SynapseMed - Authentication System
-// ==========================================
-
 (function () {
-    "use strict";
+"use strict";
 
-    const db = window.synapseDB;
+const db = window.synapseDB;
 
-    if (!db) {
-        console.error("SynapseMed: Supabase client not found.");
-        return;
-    }
+if (!db) {
+    console.error("SynapseMed: Supabase client not found.");
+    return;
+}
 
-    // Arabic messages
-    const messages = {
-        loginSuccess: "تم تسجيل الدخول بنجاح.",
-        signupSuccess: "تم إنشاء الحساب بنجاح.",
-        pending: "حسابك بانتظار موافقة الإدارة.",
-        rejected: "عذراً، لم تتم الموافقة على حسابك.",
-        invalidCredentials: "البريد الإلكتروني أو كلمة المرور غير صحيحة.",
-        missingFields: "يرجى تعبئة جميع الحقول.",
-        weakPassword: "كلمة المرور يجب أن تكون 8 أحرف على الأقل.",
-        passwordMismatch: "كلمتا المرور غير متطابقتين.",
-        emailConfirmation: "تم إنشاء الحساب. يرجى تأكيد بريدك الإلكتروني.",
-        generalError: "حدث خطأ، يرجى المحاولة مجدداً."
-    };
+const messages = {
+    loginSuccess: "تم تسجيل الدخول بنجاح.",
+    signupSuccess: "تم إرسال طلب الانضمام بنجاح.",
+    pending: "طلبك قيد مراجعة الإدارة.",
+    rejected: "عذراً، لم تتم الموافقة على طلب انضمامك.",
+    invalidCredentials: "البريد الإلكتروني أو كلمة المرور غير صحيحة.",
+    missingFields: "يرجى تعبئة جميع الحقول.",
+    weakPassword: "كلمة المرور يجب أن تكون 8 أحرف على الأقل.",
+    passwordMismatch: "كلمتا المرور غير متطابقتين.",
+    generalError: "حدث خطأ، يرجى المحاولة مجدداً."
+};
 
-    // ------------------------------------------
-    // Get current user profile
-    // ------------------------------------------
+async function getProfile() {
+    const { data: userData, error: userError } =
+        await db.auth.getUser();
 
-    async function getProfile() {
-        const { data: userData, error: userError } =
-            await db.auth.getUser();
-
-        if (userError || !userData.user) {
-            return {
-                success: false,
-                message: "يرجى تسجيل الدخول أولاً."
-            };
-        }
-
-        const { data: profile, error } = await db
-            .from("profiles")
-            .select("id, display_name, role, status")
-            .eq("id", userData.user.id)
-            .single();
-
-        if (error || !profile) {
-            return {
-                success: false,
-                message: "تعذر تحميل بيانات الحساب."
-            };
-        }
-
+    if (userError || !userData.user) {
         return {
-            success: true,
-            user: userData.user,
-            profile: profile
+            success: false,
+            message: "يرجى تسجيل الدخول أولاً."
         };
     }
 
-    // ------------------------------------------
-    // Login
-    // ------------------------------------------
+    const { data: profile, error } = await db
+        .from("profiles")
+        .select("id, display_name, role, status")
+        .eq("id", userData.user.id)
+        .single();
 
-    async function login(email, password) {
-        email = (email || "").trim().toLowerCase();
+    if (error || !profile) {
+        return {
+            success: false,
+            message: "تعذر تحميل بيانات الحساب."
+        };
+    }
 
-        if (!email || !password) {
-            return {
-                success: false,
-                message: messages.missingFields
-            };
-        }
+    return {
+        success: true,
+        user: userData.user,
+        profile
+    };
+}
 
-        const { data, error } = await db.auth.signInWithPassword({
-            email,
-            password
-        });
+async function login(email, password) {
+    email = (email || "").trim().toLowerCase();
 
-        if (error) {
-            return {
-                success: false,
-                message: messages.invalidCredentials
-            };
-        }
+    if (!email || !password) {
+        return {
+            success: false,
+            message: messages.missingFields
+        };
+    }
 
-        const result = await getProfile();
+    const { error } = await db.auth.signInWithPassword({
+        email,
+        password
+    });
 
-        if (!result.success) {
-            await db.auth.signOut();
+    if (error) {
+        return {
+            success: false,
+            message: messages.invalidCredentials
+        };
+    }
 
-            return result;
-        }
+    const result = await getProfile();
 
-        const profile = result.profile;
+    if (!result.success) {
+        await db.auth.signOut();
+        return result;
+    }
 
-        if (profile.role === "admin") {
-            return {
-                success: true,
-                role: "admin",
-                profile,
-                message: messages.loginSuccess
-            };
-        }
+    const profile = result.profile;
 
-        if (profile.status === "pending") {
-            return {
-                success: false,
-                status: "pending",
-                message: messages.pending
-            };
-        }
-
-        if (profile.status === "rejected") {
-            return {
-                success: false,
-                status: "rejected",
-                message: messages.rejected
-            };
-        }
-
-        if (profile.status !== "approved") {
-            return {
-                success: false,
-                message: messages.generalError
-            };
-        }
-
+    if (profile.role === "admin") {
         return {
             success: true,
-            role: "student",
+            role: "admin",
             profile,
             message: messages.loginSuccess
         };
     }
 
-    // ------------------------------------------
-    // Register new student
-    // ------------------------------------------
-
-    async function register(email, password, confirmPassword) {
-        email = (email || "").trim().toLowerCase();
-
-        if (!email || !password || !confirmPassword) {
-            return {
-                success: false,
-                message: messages.missingFields
-            };
-        }
-
-        if (password.length < 8) {
-            return {
-                success: false,
-                message: messages.weakPassword
-            };
-        }
-
-        if (password !== confirmPassword) {
-            return {
-                success: false,
-                message: messages.passwordMismatch
-            };
-        }
-
-        const { data, error } = await db.auth.signUp({
-            email,
-            password
-        });
-
-        if (error) {
-            return {
-                success: false,
-                message: error.message
-            };
-        }
-
-        if (!data.session) {
-            return {
-                success: true,
-                status: "email_confirmation",
-                message: messages.emailConfirmation
-            };
-        }
+    if (profile.status === "pending") {
+        await db.auth.signOut();
 
         return {
-            success: true,
+            success: false,
             status: "pending",
             message: messages.pending
         };
     }
 
-    // ------------------------------------------
-    // Logout
-    // ------------------------------------------
-
-    async function logout() {
-        const { error } = await db.auth.signOut();
-
-        if (error) {
-            return {
-                success: false,
-                message: error.message
-            };
-        }
+    if (profile.status === "rejected") {
+        await db.auth.signOut();
 
         return {
-            success: true,
-            message: "تم تسجيل الخروج بنجاح."
+            success: false,
+            status: "rejected",
+            message: messages.rejected
         };
     }
 
-    // ------------------------------------------
-    // Check current session
-    // ------------------------------------------
-
-    async function checkSession() {
-        const { data } = await db.auth.getSession();
-
-        if (!data.session) {
-            return {
-                authenticated: false
-            };
-        }
-
-        const result = await getProfile();
-
-        if (!result.success) {
-            return {
-                authenticated: false
-            };
-        }
-
-        const profile = result.profile;
+    if (profile.status !== "approved") {
+        await db.auth.signOut();
 
         return {
-            authenticated: true,
-            approved:
-                profile.role === "admin" ||
-                profile.status === "approved",
-            role: profile.role,
-            status: profile.status,
-            profile: profile
+            success: false,
+            message: messages.generalError
         };
     }
 
-    // ------------------------------------------
-    // Public API
-    // ------------------------------------------
-
-    window.SynapseAuth = {
-        login,
-        register,
-        logout,
-        getProfile,
-        checkSession
+    return {
+        success: true,
+        role: "student",
+        profile,
+        message: messages.loginSuccess
     };
+}
 
-    console.log("SynapseMed Authentication module loaded.");
+async function register(email, password, confirmPassword) {
+    email = (email || "").trim().toLowerCase();
+
+    if (!email || !password || !confirmPassword) {
+        return {
+            success: false,
+            message: messages.missingFields
+        };
+    }
+
+    if (password.length < 8) {
+        return {
+            success: false,
+            message: messages.weakPassword
+        };
+    }
+
+    if (password !== confirmPassword) {
+        return {
+            success: false,
+            message: messages.passwordMismatch
+        };
+    }
+
+    const { data, error } = await db.auth.signUp({
+        email,
+        password
+    });
+
+    if (error) {
+        return {
+            success: false,
+            message: error.message
+        };
+    }
+
+    if (!data.user) {
+        return {
+            success: false,
+            message: messages.generalError
+        };
+    }
+
+    // تسجيل خروج فوري بعد إنشاء الحساب.
+    // يبقى الحساب بانتظار موافقة الإدارة.
+    if (data.session) {
+        await db.auth.signOut();
+    }
+
+    return {
+        success: true,
+        status: "pending",
+        message: messages.signupSuccess + " " + messages.pending
+    };
+}
+
+async function logout() {
+    const { error } = await db.auth.signOut();
+
+    if (error) {
+        return {
+            success: false,
+            message: error.message
+        };
+    }
+
+    return {
+        success: true,
+        message: "تم تسجيل الخروج بنجاح."
+    };
+}
+
+async function checkSession() {
+    const { data } = await db.auth.getSession();
+
+    if (!data.session) {
+        return {
+            authenticated: false
+        };
+    }
+
+    const result = await getProfile();
+
+    if (!result.success) {
+        return {
+            authenticated: false
+        };
+    }
+
+    const profile = result.profile;
+
+    return {
+        authenticated: true,
+        approved:
+            profile.role === "admin" ||
+            profile.status === "approved",
+        role: profile.role,
+        status: profile.status,
+        profile
+    };
+}
+
+window.SynapseAuth = {
+    login,
+    register,
+    logout,
+    getProfile,
+    checkSession
+};
+
+console.log("SynapseMed Authentication module loaded.");
 
 })();
