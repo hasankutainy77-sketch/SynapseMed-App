@@ -20,36 +20,59 @@ const messages = {
     generalError: "حدث خطأ، يرجى المحاولة مجدداً."
 };
 
+/* =====================================
+   جلب بيانات المستخدم
+===================================== */
+
 async function getProfile() {
-    const { data: userData, error: userError } =
-        await db.auth.getUser();
+    try {
+        const { data: userData, error: userError } =
+            await db.auth.getUser();
 
-    if (userError || !userData.user) {
+        if (userError || !userData.user) {
+            return {
+                success: false,
+                message: "يرجى تسجيل الدخول أولاً."
+            };
+        }
+
+        const { data: profile, error } = await db
+            .from("profiles")
+            .select("id, display_name, role, status")
+            .eq("id", userData.user.id)
+            .single();
+
+        if (error || !profile) {
+            console.error("PROFILE ERROR:", error);
+
+            return {
+                success: false,
+                message: error
+                    ? "تعذر تحميل بيانات الحساب: " + error.message
+                    : "تعذر تحميل بيانات الحساب."
+            };
+        }
+
+        return {
+            success: true,
+            user: userData.user,
+            profile
+        };
+
+    } catch (error) {
+        console.error("GET PROFILE ERROR:", error);
+
         return {
             success: false,
-            message: "يرجى تسجيل الدخول أولاً."
+            message: "حدث خطأ أثناء تحميل بيانات الحساب: " +
+                (error.message || "خطأ غير معروف")
         };
     }
-
-    const { data: profile, error } = await db
-        .from("profiles")
-        .select("id, display_name, role, status")
-        .eq("id", userData.user.id)
-        .single();
-
-    if (error || !profile) {
-        return {
-            success: false,
-            message: "تعذر تحميل بيانات الحساب."
-        };
-    }
-
-    return {
-        success: true,
-        user: userData.user,
-        profile
-    };
 }
+
+/* =====================================
+   تسجيل الدخول
+===================================== */
 
 async function login(email, password) {
     email = (email || "").trim().toLowerCase();
@@ -61,72 +84,98 @@ async function login(email, password) {
         };
     }
 
-    const { error } = await db.auth.signInWithPassword({
-        email,
-        password
-    });
+    try {
+        const { data, error } = await db.auth.signInWithPassword({
+            email,
+            password
+        });
 
-    if (error) {
-        return {
-            success: false,
-            message: messages.invalidCredentials
-        };
-    }
+        if (error) {
+            console.error("LOGIN AUTH ERROR:", error);
 
-    const result = await getProfile();
+            return {
+                success: false,
+                message: "خطأ المصادقة: " +
+                    (error.message || messages.invalidCredentials)
+            };
+        }
 
-    if (!result.success) {
-        await db.auth.signOut();
-        return result;
-    }
+        if (!data.user) {
+            return {
+                success: false,
+                message: "لم يرجع خادم المصادقة بيانات المستخدم."
+            };
+        }
 
-    const profile = result.profile;
+        const result = await getProfile();
 
-    if (profile.role === "admin") {
+        if (!result.success) {
+            await db.auth.signOut();
+
+            return result;
+        }
+
+        const profile = result.profile;
+
+        if (profile.role === "admin") {
+            return {
+                success: true,
+                role: "admin",
+                profile,
+                message: messages.loginSuccess
+            };
+        }
+
+        if (profile.status === "pending") {
+            await db.auth.signOut();
+
+            return {
+                success: false,
+                status: "pending",
+                message: messages.pending
+            };
+        }
+
+        if (profile.status === "rejected") {
+            await db.auth.signOut();
+
+            return {
+                success: false,
+                status: "rejected",
+                message: messages.rejected
+            };
+        }
+
+        if (profile.status !== "approved") {
+            await db.auth.signOut();
+
+            return {
+                success: false,
+                message: messages.generalError
+            };
+        }
+
         return {
             success: true,
-            role: "admin",
+            role: "student",
             profile,
             message: messages.loginSuccess
         };
-    }
 
-    if (profile.status === "pending") {
-        await db.auth.signOut();
-
-        return {
-            success: false,
-            status: "pending",
-            message: messages.pending
-        };
-    }
-
-    if (profile.status === "rejected") {
-        await db.auth.signOut();
+    } catch (error) {
+        console.error("LOGIN NETWORK/UNEXPECTED ERROR:", error);
 
         return {
             success: false,
-            status: "rejected",
-            message: messages.rejected
+            message: "تعذر إكمال تسجيل الدخول: " +
+                (error.message || "خطأ غير معروف")
         };
     }
-
-    if (profile.status !== "approved") {
-        await db.auth.signOut();
-
-        return {
-            success: false,
-            message: messages.generalError
-        };
-    }
-
-    return {
-        success: true,
-        role: "student",
-        profile,
-        message: messages.loginSuccess
-    };
 }
+
+/* =====================================
+   إنشاء حساب جديد
+===================================== */
 
 async function register(email, password, confirmPassword) {
     email = (email || "").trim().toLowerCase();
@@ -152,83 +201,138 @@ async function register(email, password, confirmPassword) {
         };
     }
 
-    const { data, error } = await db.auth.signUp({
-        email,
-        password
-    });
+    try {
+        const { data, error } = await db.auth.signUp({
+            email,
+            password
+        });
 
-    if (error) {
+        if (error) {
+            console.error("REGISTER ERROR:", error);
+
+            return {
+                success: false,
+                message: error.message
+            };
+        }
+
+        if (!data.user) {
+            return {
+                success: false,
+                message: messages.generalError
+            };
+        }
+
+        if (data.session) {
+            await db.auth.signOut();
+        }
+
+        return {
+            success: true,
+            status: "pending",
+            message: messages.signupSuccess + " " + messages.pending
+        };
+
+    } catch (error) {
+        console.error("REGISTER UNEXPECTED ERROR:", error);
+
         return {
             success: false,
-            message: error.message
+            message: "تعذر إنشاء الحساب: " +
+                (error.message || "خطأ غير معروف")
         };
     }
-
-    if (!data.user) {
-        return {
-            success: false,
-            message: messages.generalError
-        };
-    }
-
-    // تسجيل خروج فوري بعد إنشاء الحساب.
-    // يبقى الحساب بانتظار موافقة الإدارة.
-    if (data.session) {
-        await db.auth.signOut();
-    }
-
-    return {
-        success: true,
-        status: "pending",
-        message: messages.signupSuccess + " " + messages.pending
-    };
 }
+
+/* =====================================
+   تسجيل الخروج
+===================================== */
 
 async function logout() {
-    const { error } = await db.auth.signOut();
+    try {
+        const { error } = await db.auth.signOut();
 
-    if (error) {
+        if (error) {
+            console.error("LOGOUT ERROR:", error);
+
+            return {
+                success: false,
+                message: error.message
+            };
+        }
+
+        return {
+            success: true,
+            message: "تم تسجيل الخروج بنجاح."
+        };
+
+    } catch (error) {
+        console.error("LOGOUT UNEXPECTED ERROR:", error);
+
         return {
             success: false,
-            message: error.message
+            message: error.message || messages.generalError
         };
     }
-
-    return {
-        success: true,
-        message: "تم تسجيل الخروج بنجاح."
-    };
 }
+
+/* =====================================
+   التحقق من الجلسة
+===================================== */
 
 async function checkSession() {
-    const { data } = await db.auth.getSession();
+    try {
+        const { data, error } = await db.auth.getSession();
 
-    if (!data.session) {
+        if (error) {
+            console.error("SESSION ERROR:", error);
+
+            return {
+                authenticated: false,
+                error: error.message
+            };
+        }
+
+        if (!data.session) {
+            return {
+                authenticated: false
+            };
+        }
+
+        const result = await getProfile();
+
+        if (!result.success) {
+            return {
+                authenticated: false,
+                error: result.message
+            };
+        }
+
+        const profile = result.profile;
+
         return {
-            authenticated: false
+            authenticated: true,
+            approved:
+                profile.role === "admin" ||
+                profile.status === "approved",
+            role: profile.role,
+            status: profile.status,
+            profile
+        };
+
+    } catch (error) {
+        console.error("CHECK SESSION ERROR:", error);
+
+        return {
+            authenticated: false,
+            error: error.message || messages.generalError
         };
     }
-
-    const result = await getProfile();
-
-    if (!result.success) {
-        return {
-            authenticated: false
-        };
-    }
-
-    const profile = result.profile;
-
-    return {
-        authenticated: true,
-        approved:
-            profile.role === "admin" ||
-            profile.status === "approved",
-        role: profile.role,
-        status: profile.status,
-        profile
-    };
 }
+
+/* =====================================
+   إتاحة وظائف المصادقة للتطبيق
+===================================== */
 
 window.SynapseAuth = {
     login,
