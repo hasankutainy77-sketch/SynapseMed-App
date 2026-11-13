@@ -3,19 +3,23 @@
 
 let redirecting = false;
 
+function getOfflinePage() {
+const path = window.location.pathname;
+const appRoot = path.split("/simulators/")[0];
+
+return window.location.origin + appRoot + "/offline.html";
+
+}
+
 function showOfflinePage() {
 if (redirecting) return;
 
-const current = window.location.pathname;
-
-if (current.endsWith("/offline.html")) return;
+if (window.location.pathname.endsWith("/offline.html")) {
+  return;
+}
 
 redirecting = true;
-
-window.location.href = new URL(
-  "offline.html",
-  window.location.href
-).href;
+window.location.replace(getOfflinePage());
 
 }
 
@@ -25,13 +29,13 @@ showOfflinePage();
 return;
 }
 
-try {
-  const controller = new AbortController();
-  const timeout = setTimeout(
-    () => controller.abort(),
-    5000
-  );
+const controller = new AbortController();
 
+const timeout = setTimeout(() => {
+  controller.abort();
+}, 5000);
+
+try {
   await fetch(
     "https://hasankutainy77-sketch.github.io/SynapseMed-App/",
     {
@@ -41,32 +45,17 @@ try {
       signal: controller.signal
     }
   );
-
-  clearTimeout(timeout);
 } catch (error) {
   showOfflinePage();
+} finally {
+  clearTimeout(timeout);
 }
 
 }
 
 window.addEventListener("offline", showOfflinePage);
-
 window.addEventListener("online", checkConnection);
 
-document.addEventListener("click", function (event) {
-const link = event.target.closest("a");
-
-if (!link) return;
-
-if (!navigator.onLine) {
-  event.preventDefault();
-  showOfflinePage();
-}
-
-});
-
-window.addEventListener("pageshow", function () {
-checkConnection();
-});
+window.addEventListener("pageshow", checkConnection);
 
 })();
