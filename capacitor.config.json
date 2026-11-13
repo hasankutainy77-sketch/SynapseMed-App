@@ -1,10 +1,6 @@
 {
-  "appId": "com.synapsemed.app",
-  "appName": "SynapseMed",
-  "webDir": "www",
-  "server": {
-    "url": "https://hasankutainy77-sketch.github.io/SynapseMed-App/",
-    "cleartext": false,
-    "androidScheme": "https"
-  }
+"appId": "com.synapsemed.app",
+"appName": "SynapseMed",
+"webDir": "www",
+"androidScheme": "https"
 }
