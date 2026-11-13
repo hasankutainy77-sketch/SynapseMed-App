@@ -36,10 +36,13 @@ button:focus-visible{outline:3px solid var(--mi);outline-offset:2px}
 <p class="intro">اسحب لتدوير الكاميرا. اختر أداة ثم اضغط على المنطقة اللي بتنبض بالأحمر. إذا صار نزف، سيطر عليه قبل ما ينهار الضغط. يحتاج إنترنت لتحميل مكتبة 3D.</p>
 <div id="vit"></div><div id="cv"></div><div id="panel"></div>
 </div>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+<!-- تحميل مكتبة Three.js محلياً من ملفات التطبيق -->
+<script src="../js/three.min.js"></script>
+
 <script>
 const $=s=>document.querySelector(s);
-if(typeof THREE==="undefined"){$("#cv").innerHTML='<p class="intro" style="padding:20px;color:#ddd">تعذّر تحميل مكتبة 3D. تأكد من الاتصال بالإنترنت وأعد فتح الصفحة.</p>'}else main();
+if(typeof THREE==="undefined"){$("#cv").innerHTML='<p class="intro" style="padding:20px;color:#ddd">تعذّر تحميل مكتبة 3D. تأكد من وجود ملف three.min.js داخل مجلد js.</p>'}else main();
 function main(){
 const TOOLS={scal:["🔪","مشرط"],scis:["✂️","مقص"],caut:["⚡","كوتري"],clamp:["🗜️","كلامب"],lig:["🧵","خيط"],toothed:["🦷","ملقط مسنن"],babc:["🤏","ملقط ناعم"],gauze:["🩹","شاش ضغط"]};
 const M=(c,o)=>new THREE.MeshLambertMaterial(Object.assign({color:c,emissive:0x000000},o||{}));
