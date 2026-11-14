@@ -2,1324 +2,547 @@
 "use strict";
 
 const db = window.synapseDB;
-
 if (!db) {
     console.error("SynapseMed: Supabase not found.");
     return;
 }
 
-/* CLEAN OLD BUTTONS */
-
-document.getElementById("adminStudentsButton")?.remove();
-document.getElementById("synapse-admin-button")?.remove();
-document.getElementById("adminToolbar")?.remove();
-document.getElementById("adminStudentsPanel")?.remove();
-document.getElementById("adminSimulatorsPanel")?.remove();
+/* CLEAN OLD UI */
+[
+    "adminStudentsButton",
+    "synapse-admin-button",
+    "adminToolbar",
+    "adminStudentsPanel",
+    "adminSimulatorsPanel"
+].forEach(id => document.getElementById(id)?.remove());
 
 /* STYLES */
-
 const style = document.createElement("style");
-
 style.textContent = `
-#adminToolbar {
-    display:none;
-    margin:18px 0 22px;
-    padding:15px;
-    background:linear-gradient(135deg,#142c3d,#101b2c);
-    border:1px solid rgba(36,214,193,.25);
-    border-radius:17px;
-    gap:10px;
-    flex-wrap:wrap;
-}
-
-#adminToolbar.visible {
-    display:flex;
-}
-
-.admin-toolbar-title {
-    width:100%;
-    color:#24d6c1;
-    font-size:13px;
-    font-weight:800;
-}
-
-.admin-toolbar-btn {
-    flex:1;
-    min-width:130px;
-    border:1px solid rgba(36,214,193,.2);
-    border-radius:11px;
-    padding:12px 10px;
-    background:rgba(36,214,193,.09);
-    color:#24d6c1;
-    font-weight:800;
-    font-size:12px;
-    cursor:pointer;
-}
-
-.admin-full-panel {
-    position:fixed;
-    inset:0;
-    z-index:9999;
-    background:#07111f;
-    color:#f1f5f9;
-    padding:18px;
-    overflow-y:auto;
-    display:none;
-    direction:rtl;
-    font-family:Arial,sans-serif;
-}
-
-.admin-panel-header {
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-    gap:10px;
-    margin-bottom:20px;
-}
-
-.admin-panel-header h2 {
-    color:#5eead4;
-    margin:0;
-    font-size:19px;
-}
-
-.admin-close,
-.admin-refresh {
-    border:0;
-    border-radius:9px;
-    padding:10px 14px;
-    cursor:pointer;
-    font-weight:bold;
-    color:white;
-}
-
-.admin-close {
-    background:#334155;
-}
-
-.admin-refresh {
-    background:#0f766e;
-    margin-bottom:15px;
-}
-
-.admin-message {
-    color:#cbd5e1;
-    padding:20px 5px;
-    text-align:center;
-    line-height:1.8;
-}
-
-.admin-student-card,
-.admin-sim-card,
-.admin-form-box,
-.admin-category-box {
-    background:#142337;
-    border:1px solid #263b52;
-    border-radius:14px;
-    padding:15px;
-    margin-bottom:14px;
-}
-
-.admin-student-card h3,
-.admin-sim-card h3 {
-    margin:0 0 10px;
-    color:#ccfbf1;
-    font-size:16px;
-}
-
-.admin-student-card p,
-.admin-sim-card p {
-    color:#cbd5e1;
-    font-size:13px;
-    line-height:1.8;
-    overflow-wrap:anywhere;
-}
-
-.admin-actions {
-    display:flex;
-    flex-wrap:wrap;
-    gap:8px;
-    margin-top:13px;
-}
-
-.admin-actions button {
-    flex:1;
-    min-width:85px;
-    border:0;
-    border-radius:9px;
-    padding:11px 8px;
-    color:white;
-    font-weight:bold;
-    cursor:pointer;
-}
-
-.admin-approve { background:#15803d; }
-.admin-reject { background:#b91c1c; }
-.admin-edit { background:#2563eb; }
-.admin-delete { background:#991b1b; }
-.admin-publish { background:#0f766e; }
-.admin-hide { background:#475569; }
-
-.admin-field {
-    margin-bottom:13px;
-}
-
-.admin-field label {
-    display:block;
-    color:#cbd5e1;
-    font-size:13px;
-    margin-bottom:7px;
-    font-weight:bold;
-}
-
-.admin-field input,
-.admin-field textarea,
-.admin-field select {
-    width:100%;
-    box-sizing:border-box;
-    border:1px solid #334155;
-    border-radius:10px;
-    background:#0b1728;
-    color:white;
-    padding:12px;
-    font-size:14px;
-    outline:none;
-}
-
-.admin-field textarea {
-    min-height:85px;
-    resize:vertical;
-}
-
-.admin-primary-btn {
-    width:100%;
-    border:0;
-    border-radius:10px;
-    background:#0f766e;
-    color:white;
-    padding:14px;
-    font-weight:bold;
-    cursor:pointer;
-    margin-top:5px;
-}
-
-.admin-secondary-btn {
-    width:100%;
-    border:1px solid #475569;
-    border-radius:10px;
-    background:#26374b;
-    color:white;
-    padding:12px;
-    font-weight:bold;
-    cursor:pointer;
-    margin-top:8px;
-}
-
-.admin-section-title {
-    color:#5eead4;
-    font-size:16px;
-    margin:22px 0 13px;
-}
-
-.admin-status {
-    display:inline-block;
-    padding:5px 9px;
-    border-radius:7px;
-    font-size:11px;
-    font-weight:bold;
-}
-
-.admin-status.published {
-    background:#14532d;
-    color:#bbf7d0;
-}
-
-.admin-status.hidden {
-    background:#713f12;
-    color:#fde68a;
-}
-
-.admin-count {
-    color:#94a3b8;
-    font-size:12px;
-    margin-bottom:12px;
-}
-
-.admin-actions button:disabled,
-.admin-primary-btn:disabled {
-    opacity:.5;
-    cursor:wait;
-}
+#adminToolbar{display:none;margin:18px 0 22px;padding:15px;background:linear-gradient(135deg,#142c3d,#101b2c);border:1px solid rgba(36,214,193,.25);border-radius:17px;gap:10px;flex-wrap:wrap}
+#adminToolbar.visible{display:flex}
+.admin-toolbar-title{width:100%;color:#24d6c1;font-size:13px;font-weight:800}
+.admin-toolbar-btn{flex:1;min-width:130px;border:1px solid rgba(36,214,193,.2);border-radius:11px;padding:12px 10px;background:rgba(36,214,193,.09);color:#24d6c1;font-weight:800;font-size:12px;cursor:pointer}
+.admin-full-panel{position:fixed;inset:0;z-index:9999;background:#07111f;color:#f1f5f9;padding:18px;overflow-y:auto;display:none;direction:rtl;font-family:Arial,sans-serif}
+.admin-panel-header{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:20px}
+.admin-panel-header h2{color:#5eead4;margin:0;font-size:19px}
+.admin-close,.admin-refresh{border:0;border-radius:9px;padding:10px 14px;cursor:pointer;font-weight:bold;color:white}
+.admin-close{background:#334155}.admin-refresh{background:#0f766e;margin-bottom:15px}
+.admin-message{color:#cbd5e1;padding:20px 5px;text-align:center;line-height:1.8}
+.admin-student-card,.admin-sim-card,.admin-form-box,.admin-category-box{background:#142337;border:1px solid #263b52;border-radius:14px;padding:15px;margin-bottom:14px}
+.admin-student-card h3,.admin-sim-card h3{margin:0 0 10px;color:#ccfbf1;font-size:16px}
+.admin-student-card p,.admin-sim-card p{color:#cbd5e1;font-size:13px;line-height:1.8;overflow-wrap:anywhere}
+.admin-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:13px}
+.admin-actions button{flex:1;min-width:85px;border:0;border-radius:9px;padding:11px 8px;color:white;font-weight:bold;cursor:pointer}
+.admin-approve{background:#15803d}.admin-reject{background:#b91c1c}.admin-edit{background:#2563eb}.admin-delete{background:#991b1b}.admin-publish{background:#0f766e}.admin-hide{background:#475569}
+.admin-field{margin-bottom:13px}
+.admin-field label{display:block;color:#cbd5e1;font-size:13px;margin-bottom:7px;font-weight:bold}
+.admin-field input,.admin-field textarea,.admin-field select{width:100%;box-sizing:border-box;border:1px solid #334155;border-radius:10px;background:#0b1728;color:white;padding:12px;font-size:14px;outline:none}
+.admin-field input[type=checkbox]{width:auto}
+.admin-field input[type=file]{background:#142337}
+.admin-field textarea{min-height:85px;resize:vertical}
+.admin-primary-btn{width:100%;border:0;border-radius:10px;background:#0f766e;color:white;padding:14px;font-weight:bold;cursor:pointer;margin-top:5px}
+.admin-secondary-btn{width:100%;border:1px solid #475569;border-radius:10px;background:#26374b;color:white;padding:12px;font-weight:bold;cursor:pointer;margin-top:8px}
+.admin-section-title{color:#5eead4;font-size:16px;margin:22px 0 13px}
+.admin-status{display:inline-block;padding:5px 9px;border-radius:7px;font-size:11px;font-weight:bold}
+.admin-status.published{background:#14532d;color:#bbf7d0}.admin-status.hidden{background:#713f12;color:#fde68a}
+.admin-count{color:#94a3b8;font-size:12px;margin-bottom:12px}
+.admin-actions button:disabled,.admin-primary-btn:disabled{opacity:.5;cursor:wait}
+.admin-help{display:block;color:#94a3b8;font-size:11px;line-height:1.7;margin-top:6px}
 `;
-
 document.head.appendChild(style);
 
 /* ADMIN TOOLBAR */
-
 const toolbar = document.createElement("section");
-
 toolbar.id = "adminToolbar";
-
 toolbar.innerHTML = `
-    <div class="admin-toolbar-title">
-        ⚙️ لوحة إدارة SynapseMed
-    </div>
-
-    <button type="button"
-        class="admin-toolbar-btn"
-        id="adminOpenStudents">
-        👥 طلبات الطلاب
-    </button>
-
-    <button type="button"
-        class="admin-toolbar-btn"
-        id="adminOpenSimulators">
-        🧠 إدارة المحاكيات
-    </button>
-`;
-
+<div class="admin-toolbar-title">⚙️ لوحة إدارة SynapseMed</div>
+<button type="button" class="admin-toolbar-btn" id="adminOpenStudents">👥 طلبات الطلاب</button>
+<button type="button" class="admin-toolbar-btn" id="adminOpenSimulators">🧠 إدارة المحاكيات</button>`;
 const main = document.querySelector("main.container");
-
-if (main) {
-    main.prepend(toolbar);
-} else {
-    console.error("SynapseMed: Main container not found.");
-}
+if (main) main.prepend(toolbar);
+else console.error("SynapseMed: Main container not found.");
 
 /* STUDENTS PANEL */
-
 const studentsPanel = document.createElement("section");
-
 studentsPanel.id = "adminStudentsPanel";
 studentsPanel.className = "admin-full-panel";
-
 studentsPanel.innerHTML = `
-    <div class="admin-panel-header">
-        <h2>إدارة طلبات الطلاب</h2>
-        <button class="admin-close" id="adminCloseStudents">
-            إغلاق ✕
-        </button>
-    </div>
-
-    <button class="admin-refresh" id="adminRefreshStudents">
-        تحديث الطلبات ↻
-    </button>
-
-    <div id="adminStudentsList">
-        <p class="admin-message">جارٍ تحميل الطلبات...</p>
-    </div>
-`;
-
+<div class="admin-panel-header"><h2>إدارة طلبات الطلاب</h2><button class="admin-close" id="adminCloseStudents">إغلاق ✕</button></div>
+<button class="admin-refresh" id="adminRefreshStudents">تحديث الطلبات ↻</button>
+<div id="adminStudentsList"><p class="admin-message">جارٍ تحميل الطلبات...</p></div>`;
 document.body.appendChild(studentsPanel);
-
-const studentsList =
-    studentsPanel.querySelector("#adminStudentsList");
+const studentsList = studentsPanel.querySelector("#adminStudentsList");
 
 /* SIMULATORS PANEL */
-
 const simulatorsPanel = document.createElement("section");
-
 simulatorsPanel.id = "adminSimulatorsPanel";
 simulatorsPanel.className = "admin-full-panel";
-
 simulatorsPanel.innerHTML = `
-    <div class="admin-panel-header">
-        <h2>🧠 إدارة المحاكيات</h2>
-        <button class="admin-close" id="adminCloseSimulators">
-            إغلاق ✕
-        </button>
-    </div>
-
-    <button class="admin-refresh" id="adminRefreshSimulators">
-        تحديث القائمة ↻
-    </button>
-
-    <button class="admin-primary-btn" id="adminAddSimulator">
-        ＋ إضافة محاكاة جديدة
-    </button>
-
-    <div id="adminSimulatorForm" style="display:none;margin-top:18px;">
-        <div class="admin-form-box">
-
-            <h3 id="adminFormTitle" style="color:#5eead4;">
-                إضافة محاكاة
-            </h3>
-
-            <form id="adminSimulatorFormElement">
-
-                <div class="admin-field">
-                    <label>اسم المحاكاة *</label>
-                    <input id="simTitle" required maxlength="150"
-                        placeholder="مثال: Acute Appendicitis">
-                </div>
-
-                <div class="admin-field">
-                    <label>الوصف</label>
-                    <textarea id="simDescription"
-                        placeholder="وصف مختصر للمحاكاة"></textarea>
-                </div>
-
-                <div class="admin-field">
-                    <label>التصنيف</label>
-                    <select id="simCategory">
-                        <option value="">بدون تصنيف</option>
-                    </select>
-                </div>
-
-                <div class="admin-field">
-                    <label>مسار ملف HTML *</label>
-                    <input id="simPath" required
-                        placeholder="simulators/clinical-sim.html">
-                </div>
-
-                <div class="admin-field">
-                    <label>مسار الصورة المصغرة (اختياري)</label>
-                    <input id="simThumbnail"
-                        placeholder="images/appendix.jpg">
-                </div>
-
-                <div class="admin-field">
-                    <label>
-                        <input type="checkbox" id="simPublished" checked>
-                        نشر المحاكاة للطلاب
-                    </label>
-                </div>
-
-                <button class="admin-primary-btn" type="submit"
-                    id="adminSaveSimulator">
-                    حفظ المحاكاة
-                </button>
-
-                <button class="admin-secondary-btn" type="button"
-                    id="adminCancelSimulator">
-                    إلغاء
-                </button>
-
-            </form>
-        </div>
-    </div>
-
-    <h3 class="admin-section-title">📚 قائمة المحاكيات</h3>
-
-    <div id="adminSimulatorsList">
-        <p class="admin-message">جارٍ تحميل المحاكيات...</p>
-    </div>
-
-    <h3 class="admin-section-title">📂 إدارة التصنيفات</h3>
-
-    <div class="admin-category-box">
-
-        <div class="admin-field">
-            <label>اسم التصنيف الجديد</label>
-            <input id="newCategoryName"
-                placeholder="مثال: Cardiology">
-        </div>
-
-        <div class="admin-field">
-            <label>الأيقونة (اختياري)</label>
-            <input id="newCategoryIcon"
-                placeholder="❤️">
-        </div>
-
-        <button class="admin-primary-btn" id="adminAddCategory">
-            إضافة تصنيف
-        </button>
-
-        <div id="adminCategoriesList" style="margin-top:15px;">
-        </div>
-
-    </div>
-`;
-
+<div class="admin-panel-header"><h2>🧠 إدارة المحاكيات</h2><button class="admin-close" id="adminCloseSimulators">إغلاق ✕</button></div>
+<button class="admin-refresh" id="adminRefreshSimulators">تحديث القائمة ↻</button>
+<button class="admin-primary-btn" id="adminAddSimulator">＋ إضافة محاكاة جديدة</button>
+<div id="adminSimulatorForm" style="display:none;margin-top:18px">
+ <div class="admin-form-box">
+  <h3 id="adminFormTitle" style="color:#5eead4">إضافة محاكاة</h3>
+  <form id="adminSimulatorFormElement">
+   <div class="admin-field"><label for="simTitle">اسم المحاكاة *</label><input id="simTitle" required maxlength="150" placeholder="مثال: Acute Appendicitis"></div>
+   <div class="admin-field"><label for="simDescription">الوصف</label><textarea id="simDescription" placeholder="وصف مختصر للمحاكاة"></textarea></div>
+   <div class="admin-field"><label for="simCategory">التصنيف</label><select id="simCategory"><option value="">بدون تصنيف</option></select></div>
+   <div class="admin-field">
+    <label for="simFile">اختر ملف HTML من الهاتف</label>
+    <input id="simFile" type="file" accept=".html,text/html">
+    <span class="admin-help" id="simFileHelp">اختر ملف HTML. عند التعديل، اتركه فارغاً للاحتفاظ بالملف الحالي.</span>
+    <span class="admin-help" id="simCurrentFile"></span>
+   </div>
+   <div class="admin-field"><label for="simPath">مسار الملف الحالي (يُملأ تلقائياً)</label><input id="simPath" readonly required></div>
+   <div class="admin-field"><label for="simThumbnail">رابط الصورة المصغرة (اختياري)</label><input id="simThumbnail" placeholder="رابط صورة أو مسارها"></div>
+   <div class="admin-field"><label><input type="checkbox" id="simPublished" checked> نشر المحاكاة للطلاب</label></div>
+   <button class="admin-primary-btn" type="submit" id="adminSaveSimulator">حفظ المحاكاة</button>
+   <button class="admin-secondary-btn" type="button" id="adminCancelSimulator">إلغاء</button>
+  </form>
+ </div>
+</div>
+<h3 class="admin-section-title">📚 قائمة المحاكيات</h3><div id="adminSimulatorsList"><p class="admin-message">جارٍ تحميل المحاكيات...</p></div>
+<h3 class="admin-section-title">📂 إدارة التصنيفات</h3>
+<div class="admin-category-box">
+ <div class="admin-field"><label for="newCategoryName">اسم التصنيف الجديد</label><input id="newCategoryName" placeholder="مثال: Cardiology"></div>
+ <div class="admin-field"><label for="newCategoryIcon">الأيقونة (اختياري)</label><input id="newCategoryIcon" placeholder="❤️"></div>
+ <button type="button" class="admin-primary-btn" id="adminAddCategory">إضافة تصنيف</button>
+ <div id="adminCategoriesList" style="margin-top:15px"></div>
+</div>`;
 document.body.appendChild(simulatorsPanel);
 
-const simulatorList =
-    simulatorsPanel.querySelector("#adminSimulatorsList");
-
-const categorySelect =
-    simulatorsPanel.querySelector("#simCategory");
-
-const simulatorForm =
-    simulatorsPanel.querySelector("#adminSimulatorForm");
-
-const simulatorFormElement =
-    simulatorsPanel.querySelector("#adminSimulatorFormElement");
+const simulatorList = simulatorsPanel.querySelector("#adminSimulatorsList");
+const categorySelect = simulatorsPanel.querySelector("#simCategory");
+const simulatorForm = simulatorsPanel.querySelector("#adminSimulatorForm");
+const simulatorFormElement = simulatorsPanel.querySelector("#adminSimulatorFormElement");
+const simFileInput = simulatorsPanel.querySelector("#simFile");
+const simPathInput = simulatorsPanel.querySelector("#simPath");
+const simFileHelp = simulatorsPanel.querySelector("#simFileHelp");
+const simCurrentFile = simulatorsPanel.querySelector("#simCurrentFile");
 
 let categories = [];
 let simulators = [];
 let editingSimulatorId = null;
 
 /* HELPERS */
-
 function escapeHTML(value) {
     return String(value ?? "").replace(/[&<>"']/g, char => ({
-        "&": "&amp;",
-        "<": "&lt;",
-        ">": "&gt;",
-        '"': "&quot;",
-        "'": "&#039;"
+        "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;"
     })[char]);
 }
-
 function showMessage(element, message) {
-    element.innerHTML = `
-        <p class="admin-message">${escapeHTML(message)}</p>
-    `;
+    element.innerHTML = `<p class="admin-message">${escapeHTML(message)}</p>`;
+}
+function safeFileName(name) {
+    return String(name || "simulation.html")
+        .normalize("NFKD")
+        .replace(/[^\w.-]+/g, "_")
+        .replace(/^_+|_+$/g, "") || "simulation.html";
+}
+function isHtmlFile(file) {
+    return file && (/\.html?$/i).test(file.name) &&
+        (file.type === "" || file.type === "text/html" || file.type === "application/octet-stream");
+}
+
+/* UPLOAD HTML FILE TO SUPABASE STORAGE */
+async function uploadSimulatorHTML(file) {
+    if (!isHtmlFile(file)) throw new Error("يرجى اختيار ملف HTML صالح فقط.");
+    const uniqueName = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}-${safeFileName(file.name)}`;
+    const { data, error } = await db.storage
+        .from("simulators")
+        .upload(uniqueName, file, {
+            cacheControl: "3600",
+            contentType: "text/html",
+            upsert: false
+        });
+    if (error) throw error;
+
+    const { data: publicData } = db.storage
+        .from("simulators")
+        .getPublicUrl(data.path);
+
+    if (!publicData || !publicData.publicUrl) {
+        throw new Error("تم رفع الملف لكن تعذر إنشاء رابطه العام.");
+    }
+    return publicData.publicUrl;
 }
 
 /* STUDENT REQUESTS */
-
 async function loadStudents() {
-
     showMessage(studentsList, "جارٍ تحميل الطلبات...");
-
     try {
-        const { data, error } = await db.rpc(
-            "admin_get_pending_students"
-        );
-
+        const { data, error } = await db.rpc("admin_get_pending_students");
         if (error) throw error;
-
         if (!data || !data.length) {
-            showMessage(
-                studentsList,
-                "لا توجد طلبات انضمام معلّقة حالياً."
-            );
+            showMessage(studentsList, "لا توجد طلبات انضمام معلّقة حالياً.");
             return;
         }
-
         studentsList.innerHTML = data.map(student => `
-            <article class="admin-student-card">
-
-                <h3>${escapeHTML(
-                    student.display_name || "طالب جديد"
-                )}</h3>
-
-                <p>📧 البريد: ${escapeHTML(student.email)}</p>
-
-                <p>🕒 تاريخ التسجيل:
-                    ${escapeHTML(
-                        student.created_at
-                            ? new Date(student.created_at).toLocaleString("ar")
-                            : "غير متوفر"
-                    )}
-                </p>
-
-                <div class="admin-actions">
-
-                    <button class="admin-approve"
-                        data-student-id="${escapeHTML(student.user_id)}"
-                        data-status="approved">
-                        ✓ موافقة
-                    </button>
-
-                    <button class="admin-reject"
-                        data-student-id="${escapeHTML(student.user_id)}"
-                        data-status="rejected">
-                        ✕ رفض
-                    </button>
-
-                </div>
-
-            </article>
-        `).join("");
-
+        <article class="admin-student-card">
+         <h3>${escapeHTML(student.display_name || "طالب جديد")}</h3>
+         <p>📧 البريد: ${escapeHTML(student.email)}</p>
+         <p>🕒 تاريخ التسجيل: ${escapeHTML(student.created_at ? new Date(student.created_at).toLocaleString("ar") : "غير متوفر")}</p>
+         <div class="admin-actions">
+          <button class="admin-approve" data-student-id="${escapeHTML(student.user_id)}" data-status="approved">✓ موافقة</button>
+          <button class="admin-reject" data-student-id="${escapeHTML(student.user_id)}" data-status="rejected">✕ رفض</button>
+         </div>
+        </article>`).join("");
     } catch (error) {
         console.error(error);
-        showMessage(
-            studentsList,
-            "تعذر تحميل الطلبات. تحقق من الاتصال والصلاحيات."
-        );
+        showMessage(studentsList, "تعذر تحميل الطلبات. تحقق من الاتصال والصلاحيات.");
     }
 }
-
 async function reviewStudent(userId, status) {
-
     const action = status === "approved" ? "الموافقة على" : "رفض";
-
     if (!confirm(`هل تريد ${action} طلب هذا الطالب؟`)) return;
-
     try {
-        const { error } = await db.rpc(
-            "admin_review_student",
-            {
-                p_user_id: userId,
-                p_status: status
-            }
-        );
-
+        const { error } = await db.rpc("admin_review_student", {
+            p_user_id: userId, p_status: status
+        });
         if (error) throw error;
-
-        alert(
-            status === "approved"
-                ? "تمت الموافقة على الطالب."
-                : "تم رفض الطلب."
-        );
-
+        alert(status === "approved" ? "تمت الموافقة على الطالب." : "تم رفض الطلب.");
         await loadStudents();
-
     } catch (error) {
         console.error(error);
-        alert("تعذر تنفيذ العملية.");
+        alert("تعذر تنفيذ العملية: " + error.message);
     }
 }
 
-/* LOAD CATEGORIES */
-
+/* CATEGORIES */
 async function loadCategories() {
-
-    const { data, error } = await db
-        .from("categories")
+    const { data, error } = await db.from("categories")
         .select("id,name,icon,sort_order")
         .order("sort_order", { ascending: true });
-
     if (error) throw error;
-
     categories = data || [];
-
-    categorySelect.innerHTML =
-        `<option value="">بدون تصنيف</option>` +
-        categories.map(category => `
-            <option value="${escapeHTML(category.id)}">
-                ${escapeHTML(category.icon || "📁")}
-                ${escapeHTML(category.name)}
-            </option>
-        `).join("");
-
+    categorySelect.innerHTML = `<option value="">بدون تصنيف</option>` +
+        categories.map(category => `<option value="${escapeHTML(category.id)}">${escapeHTML(category.icon || "📁")} ${escapeHTML(category.name)}</option>`).join("");
     renderCategories();
 }
-
-/* RENDER CATEGORIES */
-
 function renderCategories() {
-
-    const box = simulatorsPanel.querySelector(
-        "#adminCategoriesList"
-    );
-
+    const box = simulatorsPanel.querySelector("#adminCategoriesList");
     if (!categories.length) {
         showMessage(box, "لا توجد تصنيفات.");
         return;
     }
-
     box.innerHTML = categories.map(category => `
-        <div style="
-            display:flex;
-            align-items:center;
-            justify-content:space-between;
-            gap:8px;
-            padding:10px;
-            border-bottom:1px solid #334155;
-        ">
-
-            <span>
-                ${escapeHTML(category.icon || "📁")}
-                ${escapeHTML(category.name)}
-            </span>
-
-            <div style="display:flex;gap:6px;">
-
-                <button class="admin-edit"
-                    data-category-edit="${escapeHTML(category.id)}"
-                    style="border:0;border-radius:7px;padding:8px;color:white;">
-                    تعديل
-                </button>
-
-                <button class="admin-delete"
-                    data-category-delete="${escapeHTML(category.id)}"
-                    style="border:0;border-radius:7px;padding:8px;color:white;">
-                    حذف
-                </button>
-
-            </div>
-
-        </div>
-    `).join("");
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px;border-bottom:1px solid #334155">
+     <span>${escapeHTML(category.icon || "📁")} ${escapeHTML(category.name)}</span>
+     <div style="display:flex;gap:6px">
+      <button class="admin-edit" data-category-edit="${escapeHTML(category.id)}" style="border:0;border-radius:7px;padding:8px;color:white">تعديل</button>
+      <button class="admin-delete" data-category-delete="${escapeHTML(category.id)}" style="border:0;border-radius:7px;padding:8px;color:white">حذف</button>
+     </div>
+    </div>`).join("");
 }
-
-/* ADD CATEGORY */
-
 async function addCategory() {
-
     const nameInput = simulatorsPanel.querySelector("#newCategoryName");
     const iconInput = simulatorsPanel.querySelector("#newCategoryIcon");
-
     const name = nameInput.value.trim();
     const icon = iconInput.value.trim();
-
-    if (!name) {
-        alert("يرجى إدخال اسم التصنيف.");
-        return;
-    }
-
+    if (!name) return alert("يرجى إدخال اسم التصنيف.");
     try {
-        const nextOrder = categories.length
-            ? Math.max(...categories.map(c => c.sort_order || 0)) + 1
-            : 1;
-
-        const { error } = await db
-            .from("categories")
-            .insert({
-                name,
-                icon: icon || null,
-                sort_order: nextOrder
-            });
-
+        const nextOrder = categories.length ? Math.max(...categories.map(c => c.sort_order || 0)) + 1 : 1;
+        const { error } = await db.from("categories").insert({
+            name, icon: icon || null, sort_order: nextOrder
+        });
         if (error) throw error;
-
         nameInput.value = "";
         iconInput.value = "";
-
         await loadCategories();
-
         alert("تمت إضافة التصنيف.");
-
     } catch (error) {
         console.error(error);
         alert("تعذرت إضافة التصنيف: " + error.message);
     }
 }
-
-/* EDIT CATEGORY */
-
 async function editCategory(id) {
-
     const category = categories.find(item => item.id === id);
-
     if (!category) return;
-
     const name = prompt("اسم التصنيف:", category.name);
-
     if (name === null) return;
-
-    if (!name.trim()) {
-        alert("اسم التصنيف لا يمكن أن يكون فارغاً.");
-        return;
-    }
-
-    const icon = prompt(
-        "أيقونة التصنيف:",
-        category.icon || ""
-    );
-
+    if (!name.trim()) return alert("اسم التصنيف لا يمكن أن يكون فارغاً.");
+    const icon = prompt("أيقونة التصنيف:", category.icon || "");
     if (icon === null) return;
-
     try {
-        const { error } = await db
-            .from("categories")
-            .update({
-                name: name.trim(),
-                icon: icon.trim() || null
-            })
-            .eq("id", id);
-
+        const { error } = await db.from("categories")
+            .update({ name: name.trim(), icon: icon.trim() || null }).eq("id", id);
         if (error) throw error;
-
         await loadCategories();
-
         alert("تم تعديل التصنيف.");
-
     } catch (error) {
         console.error(error);
         alert("تعذر تعديل التصنيف: " + error.message);
     }
 }
-
-/* DELETE CATEGORY */
-
 async function deleteCategory(id) {
-
     const category = categories.find(item => item.id === id);
-
-    if (!category) return;
-
-    if (!confirm(
-        `هل تريد حذف التصنيف "${category.name}"؟`
-    )) return;
-
+    if (!category || !confirm(`هل تريد حذف التصنيف "${category.name}"؟`)) return;
     try {
-        const { error } = await db
-            .from("categories")
-            .delete()
-            .eq("id", id);
-
+        const { error } = await db.from("categories").delete().eq("id", id);
         if (error) throw error;
-
         await loadCategories();
-
         alert("تم حذف التصنيف.");
-
     } catch (error) {
         console.error(error);
-        alert(
-            "تعذر حذف التصنيف. قد يكون مرتبطاً بمحاكيات موجودة.\n" +
-            error.message
-        );
+        alert("تعذر حذف التصنيف. قد يكون مرتبطاً بمحاكيات موجودة.\n" + error.message);
     }
 }
 
-/* LOAD SIMULATORS */
-
+/* SIMULATORS */
 async function loadSimulators() {
-
     showMessage(simulatorList, "جارٍ تحميل المحاكيات...");
-
     try {
-        const { data, error } = await db
-            .from("simulators")
-            .select(`
-                id,
-                title,
-                description,
-                category_id,
-                file_path,
-                thumbnail_path,
-                is_published,
-                created_at,
-                updated_at
-            `)
+        const { data, error } = await db.from("simulators")
+            .select("id,title,description,category_id,file_path,thumbnail_path,is_published,created_at,updated_at")
             .order("created_at", { ascending: false });
-
         if (error) throw error;
-
         simulators = data || [];
-
         renderSimulators();
-
     } catch (error) {
         console.error(error);
-
-        showMessage(
-            simulatorList,
-            "تعذر تحميل المحاكيات. تحقق من صلاحيات المدير."
-        );
+        showMessage(simulatorList, "تعذر تحميل المحاكيات. تحقق من صلاحيات المدير.");
     }
 }
-
-/* RENDER SIMULATORS */
-
 function renderSimulators() {
-
     if (!simulators.length) {
-        showMessage(
-            simulatorList,
-            "لا توجد محاكيات في قاعدة البيانات حالياً."
-        );
+        showMessage(simulatorList, "لا توجد محاكيات في قاعدة البيانات حالياً.");
         return;
     }
-
-    simulatorList.innerHTML = `
-        <div class="admin-count">
-            إجمالي المحاكيات: ${simulators.length}
-        </div>
-    ` + simulators.map(simulator => {
-
-        const category = categories.find(
-            item => item.id === simulator.category_id
-        );
-
-        return `
+    simulatorList.innerHTML = `<div class="admin-count">إجمالي المحاكيات: ${simulators.length}</div>` +
+        simulators.map(simulator => {
+            const category = categories.find(item => item.id === simulator.category_id);
+            return `
             <article class="admin-sim-card">
-
-                <h3>${escapeHTML(simulator.title)}</h3>
-
-                <p>
-                    📂 التصنيف:
-                    ${escapeHTML(category?.name || "بدون تصنيف")}
-                </p>
-
-                <p>
-                    📁 الملف:
-                    ${escapeHTML(simulator.file_path)}
-                </p>
-
-                <p>
-                    ${escapeHTML(
-                        simulator.description || "لا يوجد وصف."
-                    )}
-                </p>
-
-                <span class="admin-status ${
-                    simulator.is_published ? "published" : "hidden"
-                }">
-                    ${
-                        simulator.is_published
-                            ? "منشورة للطلاب"
-                            : "مخفية"
-                    }
-                </span>
-
-                <div class="admin-actions">
-
-                    <button class="admin-edit"
-                        data-simulator-edit="${escapeHTML(simulator.id)}">
-                        ✏️ تعديل
-                    </button>
-
-                    <button class="${
-                        simulator.is_published
-                            ? "admin-hide"
-                            : "admin-publish"
-                    }"
-                        data-simulator-toggle="${escapeHTML(simulator.id)}">
-                        ${
-                            simulator.is_published
-                                ? "إخفاء"
-                                : "نشر"
-                        }
-                    </button>
-
-                    <button class="admin-delete"
-                        data-simulator-delete="${escapeHTML(simulator.id)}">
-                        🗑️ حذف
-                    </button>
-
-                </div>
-
-            </article>
-        `;
-
-    }).join("");
+             <h3>${escapeHTML(simulator.title)}</h3>
+             <p>📂 التصنيف: ${escapeHTML(category?.name || "بدون تصنيف")}</p>
+             <p>📁 الملف: ${escapeHTML(simulator.file_path)}</p>
+             <p>${escapeHTML(simulator.description || "لا يوجد وصف.")}</p>
+             <span class="admin-status ${simulator.is_published ? "published" : "hidden"}">${simulator.is_published ? "منشورة للطلاب" : "مخفية"}</span>
+             <div class="admin-actions">
+              <button class="admin-edit" data-simulator-edit="${escapeHTML(simulator.id)}">✏️ تعديل</button>
+              <button class="${simulator.is_published ? "admin-hide" : "admin-publish"}" data-simulator-toggle="${escapeHTML(simulator.id)}">${simulator.is_published ? "إخفاء" : "نشر"}</button>
+              <button class="admin-delete" data-simulator-delete="${escapeHTML(simulator.id)}">🗑️ حذف</button>
+             </div>
+            </article>`;
+        }).join("");
 }
 
-/* RESET FORM */
-
+/* FORM */
 function resetSimulatorForm() {
-
     editingSimulatorId = null;
-
     simulatorFormElement.reset();
-
-    simulatorsPanel.querySelector("#adminFormTitle").textContent =
-        "إضافة محاكاة";
-
-    simulatorsPanel.querySelector("#adminSaveSimulator").textContent =
-        "حفظ المحاكاة";
-
+    simPathInput.value = "";
+    simCurrentFile.textContent = "";
+    simFileHelp.textContent = "اختر ملف HTML. عند التعديل، اتركه فارغاً للاحتفاظ بالملف الحالي.";
+    simulatorsPanel.querySelector("#adminFormTitle").textContent = "إضافة محاكاة";
+    simulatorsPanel.querySelector("#adminSaveSimulator").textContent = "حفظ المحاكاة";
     simulatorForm.style.display = "none";
 }
-
-/* OPEN ADD FORM */
-
 function openAddSimulatorForm() {
-
     resetSimulatorForm();
-
     simulatorForm.style.display = "block";
-
     simulatorsPanel.querySelector("#simPublished").checked = true;
-
-    simulatorForm.scrollIntoView({
-        behavior: "smooth",
-        block: "start"
-    });
+    simulatorForm.scrollIntoView({ behavior: "smooth", block: "start" });
 }
-
-/* OPEN EDIT FORM */
-
 function openEditSimulator(id) {
-
     const simulator = simulators.find(item => item.id === id);
-
     if (!simulator) return;
-
     editingSimulatorId = id;
-
-    simulatorsPanel.querySelector("#simTitle").value =
-        simulator.title || "";
-
-    simulatorsPanel.querySelector("#simDescription").value =
-        simulator.description || "";
-
-    simulatorsPanel.querySelector("#simCategory").value =
-        simulator.category_id || "";
-
-    simulatorsPanel.querySelector("#simPath").value =
-        simulator.file_path || "";
-
-    simulatorsPanel.querySelector("#simThumbnail").value =
-        simulator.thumbnail_path || "";
-
-    simulatorsPanel.querySelector("#simPublished").checked =
-        simulator.is_published;
-
-    simulatorsPanel.querySelector("#adminFormTitle").textContent =
-        "تعديل المحاكاة";
-
-    simulatorsPanel.querySelector("#adminSaveSimulator").textContent =
-        "حفظ التعديلات";
-
+    simulatorsPanel.querySelector("#simTitle").value = simulator.title || "";
+    simulatorsPanel.querySelector("#simDescription").value = simulator.description || "";
+    categorySelect.value = simulator.category_id || "";
+    simPathInput.value = simulator.file_path || "";
+    simulatorsPanel.querySelector("#simThumbnail").value = simulator.thumbnail_path || "";
+    simulatorsPanel.querySelector("#simPublished").checked = !!simulator.is_published;
+    simFileInput.value = "";
+    simCurrentFile.textContent = "الملف الحالي محفوظ. اختر ملفاً جديداً فقط إذا أردت استبداله.";
+    simFileHelp.textContent = "ترك اختيار الملف فارغاً يحافظ على ملف المحاكاة الحالي.";
+    simulatorsPanel.querySelector("#adminFormTitle").textContent = "تعديل المحاكاة";
+    simulatorsPanel.querySelector("#adminSaveSimulator").textContent = "حفظ التعديلات";
     simulatorForm.style.display = "block";
-
-    simulatorForm.scrollIntoView({
-        behavior: "smooth",
-        block: "start"
-    });
+    simulatorForm.scrollIntoView({ behavior: "smooth", block: "start" });
 }
-
-/* SAVE SIMULATOR */
-
-async function saveSimulator(event) {
-
-    event.preventDefault();
-
-    const button =
-        simulatorsPanel.querySelector("#adminSaveSimulator");
-
-    const title =
-        simulatorsPanel.querySelector("#simTitle").value.trim();
-
-    const description =
-        simulatorsPanel.querySelector("#simDescription").value.trim();
-
-    const categoryId =
-        simulatorsPanel.querySelector("#simCategory").value;
-
-    const filePath =
-        simulatorsPanel.querySelector("#simPath").value.trim();
-
-    const thumbnailPath =
-        simulatorsPanel.querySelector("#simThumbnail").value.trim();
-
-    const isPublished =
-        simulatorsPanel.querySelector("#simPublished").checked;
-
-    if (!title || !filePath) {
-        alert("الاسم ومسار الملف مطلوبان.");
+simFileInput.addEventListener("change", function () {
+    const file = this.files && this.files[0];
+    if (!file) return;
+    if (!isHtmlFile(file)) {
+        alert("يرجى اختيار ملف HTML فقط.");
+        this.value = "";
         return;
     }
-
-    const payload = {
-        title,
-        description: description || null,
-        category_id: categoryId || null,
-        file_path: filePath,
-        thumbnail_path: thumbnailPath || null,
-        is_published: isPublished,
-        updated_at: new Date().toISOString()
-    };
-
-    button.disabled = true;
-    button.textContent = "جارٍ الحفظ...";
-
-    try {
-
-        let result;
-
-        if (editingSimulatorId) {
-
-            result = await db
-                .from("simulators")
-                .update(payload)
-                .eq("id", editingSimulatorId);
-
-        } else {
-
-            result = await db
-                .from("simulators")
-                .insert(payload);
-
-        }
-
-        if (result.error) throw result.error;
-
-        alert(
-            editingSimulatorId
-                ? "تم تعديل المحاكاة بنجاح."
-                : "تمت إضافة المحاكاة بنجاح."
-        );
-
-        resetSimulatorForm();
-
-        await loadSimulators();
-
-    } catch (error) {
-
-        console.error(error);
-
-        alert("تعذر حفظ المحاكاة:\n" + error.message);
-
-    } finally {
-
-        button.disabled = false;
-
-        button.textContent = editingSimulatorId
-            ? "حفظ التعديلات"
-            : "حفظ المحاكاة";
-    }
-}
-
-/* TOGGLE PUBLISH STATUS */
-
-async function toggleSimulator(id) {
-
-    const simulator = simulators.find(item => item.id === id);
-
-    if (!simulator) return;
-
-    const nextStatus = !simulator.is_published;
-
-    if (!confirm(
-        nextStatus
-            ? "هل تريد نشر هذه المحاكاة للطلاب؟"
-            : "هل تريد إخفاء هذه المحاكاة عن الطلاب؟"
-    )) return;
-
-    try {
-
-        const { error } = await db
-            .from("simulators")
-            .update({
-                is_published: nextStatus,
-                updated_at: new Date().toISOString()
-            })
-            .eq("id", id);
-
-        if (error) throw error;
-
-        await loadSimulators();
-
-        alert(
-            nextStatus
-                ? "تم نشر المحاكاة."
-                : "تم إخفاء المحاكاة."
-        );
-
-    } catch (error) {
-
-        console.error(error);
-
-        alert("تعذر تغيير حالة النشر:\n" + error.message);
-
-    }
-}
-
-/* DELETE SIMULATOR */
-
-async function deleteSimulator(id) {
-
-    const simulator = simulators.find(item => item.id === id);
-
-    if (!simulator) return;
-
-    if (!confirm(
-        `هل أنت متأكد من حذف المحاكاة "${simulator.title}"؟\n` +
-        "سيتم حذف سجلها من قاعدة البيانات."
-    )) return;
-
-    try {
-
-        const { error } = await db
-            .from("simulators")
-            .delete()
-            .eq("id", id);
-
-        if (error) throw error;
-
-        await loadSimulators();
-
-        alert("تم حذف المحاكاة.");
-
-    } catch (error) {
-
-        console.error(error);
-
-        alert("تعذر حذف المحاكاة:\n" + error.message);
-
-    }
-}
-
-/* OPEN SIMULATOR MANAGER */
-
-async function openSimulatorManager() {
-
-    studentsPanel.style.display = "none";
-    simulatorsPanel.style.display = "block";
-
-    await loadCategories();
-    await loadSimulators();
-
-}
-
-/* EVENT LISTENERS */
-
-/* Toolbar */
-
-toolbar.querySelector("#adminOpenStudents")
-    .addEventListener("click", async function () {
-
-        studentsPanel.style.display = "block";
-        simulatorsPanel.style.display = "none";
-
-        await loadStudents();
-
-    });
-
-toolbar.querySelector("#adminOpenSimulators")
-    .addEventListener("click", openSimulatorManager);
-
-/* Close */
-
-studentsPanel.querySelector("#adminCloseStudents")
-    .addEventListener("click", function () {
-        studentsPanel.style.display = "none";
-    });
-
-simulatorsPanel.querySelector("#adminCloseSimulators")
-    .addEventListener("click", function () {
-        simulatorsPanel.style.display = "none";
-    });
-
-/* Refresh */
-
-studentsPanel.querySelector("#adminRefreshStudents")
-    .addEventListener("click", loadStudents);
-
-simulatorsPanel.querySelector("#adminRefreshSimulators")
-    .addEventListener("click", async function () {
-        await loadCategories();
-        await loadSimulators();
-    });
-
-/* Add simulator */
-
-simulatorsPanel.querySelector("#adminAddSimulator")
-    .addEventListener("click", openAddSimulatorForm);
-
-simulatorsPanel.querySelector("#adminCancelSimulator")
-    .addEventListener("click", resetSimulatorForm);
-
-simulatorFormElement.addEventListener(
-    "submit",
-    saveSimulator
-);
-
-/* Add category */
-
-simulatorsPanel.querySelector("#adminAddCategory")
-    .addEventListener("click", addCategory);
-
-/* Simulator actions */
-
-simulatorList.addEventListener("click", function (event) {
-
-    const editButton =
-        event.target.closest("[data-simulator-edit]");
-
-    const toggleButton =
-        event.target.closest("[data-simulator-toggle]");
-
-    const deleteButton =
-        event.target.closest("[data-simulator-delete]");
-
-    if (editButton) {
-        openEditSimulator(editButton.dataset.simulatorEdit);
-        return;
-    }
-
-    if (toggleButton) {
-        toggleSimulator(toggleButton.dataset.simulatorToggle);
-        return;
-    }
-
-    if (deleteButton) {
-        deleteSimulator(deleteButton.dataset.simulatorDelete);
-    }
-
+    simCurrentFile.textContent = "الملف المختار: " + file.name;
 });
 
-/* Category actions */
+/* SAVE / UPDATE */
+async function saveSimulator(event) {
+    event.preventDefault();
+    const button = simulatorsPanel.querySelector("#adminSaveSimulator");
+    const title = simulatorsPanel.querySelector("#simTitle").value.trim();
+    const description = simulatorsPanel.querySelector("#simDescription").value.trim();
+    const categoryId = categorySelect.value;
+    const thumbnailPath = simulatorsPanel.querySelector("#simThumbnail").value.trim();
+    const isPublished = simulatorsPanel.querySelector("#simPublished").checked;
+    const selectedFile = simFileInput.files && simFileInput.files[0];
+    const existing = editingSimulatorId ? simulators.find(item => item.id === editingSimulatorId) : null;
 
-simulatorsPanel.querySelector("#adminCategoriesList")
-    .addEventListener("click", function (event) {
+    if (!title) return alert("يرجى إدخال اسم المحاكاة.");
+    if (!existing && !selectedFile) return alert("يرجى اختيار ملف HTML للمحاكاة.");
+    if (selectedFile && !isHtmlFile(selectedFile)) return alert("يرجى اختيار ملف HTML صالح.");
 
-        const editButton =
-            event.target.closest("[data-category-edit]");
+    button.disabled = true;
+    button.textContent = selectedFile ? "جارٍ رفع الملف وحفظ المحاكاة..." : "جارٍ الحفظ...";
 
-        const deleteButton =
-            event.target.closest("[data-category-delete]");
+    try {
+        let filePath = existing ? existing.file_path : "";
 
-        if (editButton) {
-            editCategory(editButton.dataset.categoryEdit);
-            return;
+        if (selectedFile) {
+            filePath = await uploadSimulatorHTML(selectedFile);
         }
+        if (!filePath) throw new Error("لم يتم تحديد ملف HTML للمحاكاة.");
 
-        if (deleteButton) {
-            deleteCategory(deleteButton.dataset.categoryDelete);
+        const payload = {
+            title,
+            description: description || null,
+            category_id: categoryId || null,
+            file_path: filePath,
+            thumbnail_path: thumbnailPath || null,
+            is_published: isPublished,
+            updated_at: new Date().toISOString()
+        };
+
+        let result;
+        if (editingSimulatorId) {
+            result = await db.from("simulators").update(payload).eq("id", editingSimulatorId);
+        } else {
+            result = await db.from("simulators").insert(payload);
         }
+        if (result.error) throw result.error;
 
-    });
+        alert(editingSimulatorId ? "تم تعديل المحاكاة بنجاح." : "تم رفع المحاكاة وإضافتها بنجاح.");
+        resetSimulatorForm();
+        await loadSimulators();
+    } catch (error) {
+        console.error(error);
+        alert("تعذر حفظ المحاكاة:\n" + (error.message || error));
+    } finally {
+        button.disabled = false;
+        button.textContent = editingSimulatorId ? "حفظ التعديلات" : "حفظ المحاكاة";
+    }
+}
 
-/* Student actions */
+async function toggleSimulator(id) {
+    const simulator = simulators.find(item => item.id === id);
+    if (!simulator) return;
+    const nextStatus = !simulator.is_published;
+    if (!confirm(nextStatus ? "هل تريد نشر هذه المحاكاة للطلاب؟" : "هل تريد إخفاء هذه المحاكاة عن الطلاب؟")) return;
+    try {
+        const { error } = await db.from("simulators")
+            .update({ is_published: nextStatus, updated_at: new Date().toISOString() })
+            .eq("id", id);
+        if (error) throw error;
+        await loadSimulators();
+        alert(nextStatus ? "تم نشر المحاكاة." : "تم إخفاء المحاكاة.");
+    } catch (error) {
+        console.error(error);
+        alert("تعذر تغيير حالة النشر:\n" + error.message);
+    }
+}
+async function deleteSimulator(id) {
+    const simulator = simulators.find(item => item.id === id);
+    if (!simulator || !confirm(`هل أنت متأكد من حذف المحاكاة "${simulator.title}"؟\nسيتم حذف سجلها من قاعدة البيانات فقط.`)) return;
+    try {
+        const { error } = await db.from("simulators").delete().eq("id", id);
+        if (error) throw error;
+        await loadSimulators();
+        alert("تم حذف سجل المحاكاة. لم يتم حذف ملف التخزين تلقائياً.");
+    } catch (error) {
+        console.error(error);
+        alert("تعذر حذف المحاكاة:\n" + error.message);
+    }
+}
 
-studentsList.addEventListener("click", function (event) {
+/* OPEN MANAGER */
+async function openSimulatorManager() {
+    studentsPanel.style.display = "none";
+    simulatorsPanel.style.display = "block";
+    try {
+        await loadCategories();
+        await loadSimulators();
+    } catch (error) {
+        console.error(error);
+        alert("تعذر تحميل بيانات الإدارة: " + error.message);
+    }
+}
 
+/* EVENTS */
+toolbar.querySelector("#adminOpenStudents").addEventListener("click", async () => {
+    studentsPanel.style.display = "block";
+    simulatorsPanel.style.display = "none";
+    await loadStudents();
+});
+toolbar.querySelector("#adminOpenSimulators").addEventListener("click", openSimulatorManager);
+studentsPanel.querySelector("#adminCloseStudents").addEventListener("click", () => studentsPanel.style.display = "none");
+simulatorsPanel.querySelector("#adminCloseSimulators").addEventListener("click", () => simulatorsPanel.style.display = "none");
+studentsPanel.querySelector("#adminRefreshStudents").addEventListener("click", loadStudents);
+simulatorsPanel.querySelector("#adminRefreshSimulators").addEventListener("click", openSimulatorManager);
+simulatorsPanel.querySelector("#adminAddSimulator").addEventListener("click", openAddSimulatorForm);
+simulatorsPanel.querySelector("#adminCancelSimulator").addEventListener("click", resetSimulatorForm);
+simulatorFormElement.addEventListener("submit", saveSimulator);
+simulatorsPanel.querySelector("#adminAddCategory").addEventListener("click", addCategory);
+
+simulatorList.addEventListener("click", event => {
+    const edit = event.target.closest("[data-simulator-edit]");
+    const toggle = event.target.closest("[data-simulator-toggle]");
+    const del = event.target.closest("[data-simulator-delete]");
+    if (edit) return openEditSimulator(edit.dataset.simulatorEdit);
+    if (toggle) return toggleSimulator(toggle.dataset.simulatorToggle);
+    if (del) return deleteSimulator(del.dataset.simulatorDelete);
+});
+simulatorsPanel.querySelector("#adminCategoriesList").addEventListener("click", event => {
+    const edit = event.target.closest("[data-category-edit]");
+    const del = event.target.closest("[data-category-delete]");
+    if (edit) return editCategory(edit.dataset.categoryEdit);
+    if (del) return deleteCategory(del.dataset.categoryDelete);
+});
+studentsList.addEventListener("click", event => {
     const button = event.target.closest("[data-student-id]");
-
-    if (!button) return;
-
-    reviewStudent(
-        button.dataset.studentId,
-        button.dataset.status
-    );
-
+    if (button) reviewStudent(button.dataset.studentId, button.dataset.status);
 });
 
 /* ADMIN VISIBILITY */
-
 async function refreshAdminVisibility() {
-
     try {
-
         if (!window.SynapseAuth) {
             toolbar.classList.remove("visible");
             return;
         }
-
         const result = await window.SynapseAuth.checkSession();
-
-        const isAdmin =
-            result.authenticated &&
-            result.approved &&
-            result.role === "admin";
-
+        const isAdmin = !!(result && result.authenticated && result.approved && result.role === "admin");
         toolbar.classList.toggle("visible", isAdmin);
-
         if (!isAdmin) {
             studentsPanel.style.display = "none";
             simulatorsPanel.style.display = "none";
         }
-
     } catch (error) {
-
         console.error("Admin visibility check failed:", error);
-
         toolbar.classList.remove("visible");
-
         studentsPanel.style.display = "none";
         simulatorsPanel.style.display = "none";
-
     }
-
 }
 
 /* PUBLIC API */
-
 window.SynapseAdmin = {
     refresh: refreshAdminVisibility,
-
-    open: function () {
+    open: async function () {
         studentsPanel.style.display = "block";
-        loadStudents();
+        await loadStudents();
     },
-
     openSimulators: openSimulatorManager
 };
 
-/* INITIAL CHECK */
-
 refreshAdminVisibility();
-
 console.log("SynapseMed Admin Panel loaded.");
-
 })();
