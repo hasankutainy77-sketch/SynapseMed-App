@@ -2,6 +2,7 @@
 "use strict";
 
 const db = window.synapseDB;
+const CACHE_KEY = "synapsemed_verified_profile_v1";
 
 if (!db) {
     console.error("SynapseMed: Supabase client not found.");
@@ -20,8 +21,48 @@ const messages = {
     generalError: "حدث خطأ، يرجى المحاولة مجدداً."
 };
 
+/* حفظ آخر بيانات حساب تم التحقق منه */
+function saveVerifiedProfile(user, profile) {
+    try {
+        localStorage.setItem(CACHE_KEY, JSON.stringify({
+            userId: user.id,
+            email: user.email || "",
+            profile: profile,
+            savedAt: Date.now()
+        }));
+    } catch (error) {
+        console.warn("Could not cache verified profile:", error);
+    }
+}
+
+/* استعادة البيانات المحفوظة */
+function getCachedProfile(userId) {
+    try {
+        const cached = JSON.parse(
+            localStorage.getItem(CACHE_KEY) || "null"
+        );
+
+        if (!cached || !cached.profile || cached.userId !== userId) {
+            return null;
+        }
+
+        return cached;
+    } catch (error) {
+        return null;
+    }
+}
+
+/* حذف البيانات المحفوظة */
+function clearCachedProfile() {
+    try {
+        localStorage.removeItem(CACHE_KEY);
+    } catch (error) {
+        console.warn("Could not clear cached profile.");
+    }
+}
+
 /* =====================================
-   جلب بيانات المستخدم
+   جلب بيانات المستخدم من الخادم
 ===================================== */
 
 async function getProfile() {
@@ -52,6 +93,8 @@ async function getProfile() {
                     : "تعذر تحميل بيانات الحساب."
             };
         }
+
+        saveVerifiedProfile(userData.user, profile);
 
         return {
             success: true,
@@ -127,6 +170,7 @@ async function login(email, password) {
         }
 
         if (profile.status === "pending") {
+            clearCachedProfile();
             await db.auth.signOut();
 
             return {
@@ -137,6 +181,7 @@ async function login(email, password) {
         }
 
         if (profile.status === "rejected") {
+            clearCachedProfile();
             await db.auth.signOut();
 
             return {
@@ -261,6 +306,8 @@ async function logout() {
             };
         }
 
+        clearCachedProfile();
+
         return {
             success: true,
             message: "تم تسجيل الخروج بنجاح."
@@ -293,15 +340,80 @@ async function checkSession() {
             };
         }
 
-        if (!data.session) {
+        if (!data.session || !data.session.user) {
+            clearCachedProfile();
+
             return {
                 authenticated: false
             };
         }
 
+        const user = data.session.user;
+
+        /*
+         * عند انقطاع الإنترنت:
+         * نستخدم آخر بيانات حساب تم التحقق منه بنجاح.
+         */
+        if (!navigator.onLine) {
+            const cached = getCachedProfile(user.id);
+
+            if (!cached) {
+                return {
+                    authenticated: false,
+                    offline: true,
+                    error: "لا توجد بيانات حساب محفوظة لهذا المستخدم."
+                };
+            }
+
+            const profile = cached.profile;
+
+            if (
+                profile.role !== "admin" &&
+                profile.status !== "approved"
+            ) {
+                clearCachedProfile();
+
+                return {
+                    authenticated: false
+                };
+            }
+
+            return {
+                authenticated: true,
+                offline: true,
+                approved: true,
+                role: profile.role,
+                status: profile.status,
+                profile
+            };
+        }
+
+        /*
+         * عند وجود الإنترنت:
+         * نتحقق من الحساب وحالته من Supabase.
+         */
         const result = await getProfile();
 
         if (!result.success) {
+            /*
+             * إذا انقطع الاتصال أثناء التحقق،
+             * نحاول استخدام البيانات المحفوظة.
+             */
+            if (!navigator.onLine) {
+                const cached = getCachedProfile(user.id);
+
+                if (cached) {
+                    return {
+                        authenticated: true,
+                        offline: true,
+                        approved: true,
+                        role: cached.profile.role,
+                        status: cached.profile.status,
+                        profile: cached.profile
+                    };
+                }
+            }
+
             return {
                 authenticated: false,
                 error: result.message
@@ -310,11 +422,24 @@ async function checkSession() {
 
         const profile = result.profile;
 
+        if (
+            profile.role !== "admin" &&
+            profile.status !== "approved"
+        ) {
+            clearCachedProfile();
+
+            return {
+                authenticated: true,
+                approved: false,
+                role: profile.role,
+                status: profile.status,
+                profile
+            };
+        }
+
         return {
             authenticated: true,
-            approved:
-                profile.role === "admin" ||
-                profile.status === "approved",
+            approved: true,
             role: profile.role,
             status: profile.status,
             profile
