@@ -42,7 +42,11 @@ function getCachedProfile(userId) {
             localStorage.getItem(CACHE_KEY) || "null"
         );
 
-        if (!cached || !cached.profile || cached.userId !== userId) {
+        if (
+            !cached ||
+            !cached.profile ||
+            cached.userId !== userId
+        ) {
             return null;
         }
 
@@ -57,8 +61,43 @@ function clearCachedProfile() {
     try {
         localStorage.removeItem(CACHE_KEY);
     } catch (error) {
-        console.warn("Could not clear cached profile.");
+        console.warn("Could not clear cached profile:", error);
     }
+}
+
+/* التحقق من صلاحية الملف المحفوظ */
+function getOfflineSession(user) {
+    const cached = getCachedProfile(user.id);
+
+    if (!cached) {
+        return {
+            authenticated: false,
+            offline: true,
+            error: "لا توجد بيانات حساب محفوظة."
+        };
+    }
+
+    const profile = cached.profile;
+
+    if (
+        profile.role !== "admin" &&
+        profile.status !== "approved"
+    ) {
+        return {
+            authenticated: false,
+            offline: true,
+            error: "الحساب غير معتمد."
+        };
+    }
+
+    return {
+        authenticated: true,
+        approved: true,
+        offline: true,
+        role: profile.role,
+        status: profile.status,
+        profile: profile
+    };
 }
 
 /* =====================================
@@ -73,7 +112,9 @@ async function getProfile() {
         if (userError || !userData.user) {
             return {
                 success: false,
-                message: "يرجى تسجيل الدخول أولاً."
+                message: userError
+                    ? userError.message
+                    : "يرجى تسجيل الدخول أولاً."
             };
         }
 
@@ -89,17 +130,15 @@ async function getProfile() {
             return {
                 success: false,
                 message: error
-                    ? "تعذر تحميل بيانات الحساب: " + error.message
+                    ? error.message
                     : "تعذر تحميل بيانات الحساب."
             };
         }
 
-        saveVerifiedProfile(userData.user, profile);
-
         return {
             success: true,
             user: userData.user,
-            profile
+            profile: profile
         };
 
     } catch (error) {
@@ -107,8 +146,7 @@ async function getProfile() {
 
         return {
             success: false,
-            message: "حدث خطأ أثناء تحميل بيانات الحساب: " +
-                (error.message || "خطأ غير معروف")
+            message: error.message || messages.generalError
         };
     }
 }
@@ -129,8 +167,8 @@ async function login(email, password) {
 
     try {
         const { data, error } = await db.auth.signInWithPassword({
-            email,
-            password
+            email: email,
+            password: password
         });
 
         if (error) {
@@ -146,7 +184,7 @@ async function login(email, password) {
         if (!data.user) {
             return {
                 success: false,
-                message: "لم يرجع خادم المصادقة بيانات المستخدم."
+                message: messages.generalError
             };
         }
 
@@ -161,10 +199,12 @@ async function login(email, password) {
         const profile = result.profile;
 
         if (profile.role === "admin") {
+            saveVerifiedProfile(data.user, profile);
+
             return {
                 success: true,
                 role: "admin",
-                profile,
+                profile: profile,
                 message: messages.loginSuccess
             };
         }
@@ -200,20 +240,21 @@ async function login(email, password) {
             };
         }
 
+        saveVerifiedProfile(data.user, profile);
+
         return {
             success: true,
             role: "student",
-            profile,
+            profile: profile,
             message: messages.loginSuccess
         };
 
     } catch (error) {
-        console.error("LOGIN NETWORK/UNEXPECTED ERROR:", error);
+        console.error("LOGIN ERROR:", error);
 
         return {
             success: false,
-            message: "تعذر إكمال تسجيل الدخول: " +
-                (error.message || "خطأ غير معروف")
+            message: error.message || messages.generalError
         };
     }
 }
@@ -248,8 +289,8 @@ async function register(email, password, confirmPassword) {
 
     try {
         const { data, error } = await db.auth.signUp({
-            email,
-            password
+            email: email,
+            password: password
         });
 
         if (error) {
@@ -279,12 +320,11 @@ async function register(email, password, confirmPassword) {
         };
 
     } catch (error) {
-        console.error("REGISTER UNEXPECTED ERROR:", error);
+        console.error("REGISTER ERROR:", error);
 
         return {
             success: false,
-            message: "تعذر إنشاء الحساب: " +
-                (error.message || "خطأ غير معروف")
+            message: error.message || messages.generalError
         };
     }
 }
@@ -314,7 +354,7 @@ async function logout() {
         };
 
     } catch (error) {
-        console.error("LOGOUT UNEXPECTED ERROR:", error);
+        console.error("LOGOUT ERROR:", error);
 
         return {
             success: false,
@@ -329,6 +369,9 @@ async function logout() {
 
 async function checkSession() {
     try {
+        /*
+         * getSession يستعيد الجلسة المخزنة محلياً.
+         */
         const { data, error } = await db.auth.getSession();
 
         if (error) {
@@ -351,77 +394,38 @@ async function checkSession() {
         const user = data.session.user;
 
         /*
-         * عند انقطاع الإنترنت:
-         * نستخدم آخر بيانات حساب تم التحقق منه بنجاح.
+         * إذا كان الإنترنت مقطوعاً،
+         * استخدم آخر بيانات حساب موثوقة.
          */
         if (!navigator.onLine) {
-            const cached = getCachedProfile(user.id);
-
-            if (!cached) {
-                return {
-                    authenticated: false,
-                    offline: true,
-                    error: "لا توجد بيانات حساب محفوظة لهذا المستخدم."
-                };
-            }
-
-            const profile = cached.profile;
-
-            if (
-                profile.role !== "admin" &&
-                profile.status !== "approved"
-            ) {
-                clearCachedProfile();
-
-                return {
-                    authenticated: false
-                };
-            }
-
-            return {
-                authenticated: true,
-                offline: true,
-                approved: true,
-                role: profile.role,
-                status: profile.status,
-                profile
-            };
+            return getOfflineSession(user);
         }
 
         /*
-         * عند وجود الإنترنت:
-         * نتحقق من الحساب وحالته من Supabase.
+         * نحاول التحقق من الحساب عبر Supabase.
          */
         const result = await getProfile();
 
+        /*
+         * النقطة الأساسية في الإصلاح:
+         * فشل الاتصال بالخادم لا يعني أن الحساب خرج.
+         * نستخدم البيانات المحفوظة عند تعذر التحقق.
+         */
         if (!result.success) {
-            /*
-             * إذا انقطع الاتصال أثناء التحقق،
-             * نحاول استخدام البيانات المحفوظة.
-             */
-            if (!navigator.onLine) {
-                const cached = getCachedProfile(user.id);
+            console.warn(
+                "Server verification failed; trying cached session:",
+                result.message
+            );
 
-                if (cached) {
-                    return {
-                        authenticated: true,
-                        offline: true,
-                        approved: true,
-                        role: cached.profile.role,
-                        status: cached.profile.status,
-                        profile: cached.profile
-                    };
-                }
-            }
-
-            return {
-                authenticated: false,
-                error: result.message
-            };
+            return getOfflineSession(user);
         }
 
         const profile = result.profile;
 
+        /*
+         * إذا أكد الخادم أن الحساب مرفوض أو معلق،
+         * لا نستخدم النسخة المحلية القديمة.
+         */
         if (
             profile.role !== "admin" &&
             profile.status !== "approved"
@@ -433,20 +437,43 @@ async function checkSession() {
                 approved: false,
                 role: profile.role,
                 status: profile.status,
-                profile
+                profile: profile
             };
         }
+
+        /*
+         * التحقق ناجح: حدّث البيانات المحلية.
+         */
+        saveVerifiedProfile(result.user, profile);
 
         return {
             authenticated: true,
             approved: true,
+            offline: false,
             role: profile.role,
             status: profile.status,
-            profile
+            profile: profile
         };
 
     } catch (error) {
         console.error("CHECK SESSION ERROR:", error);
+
+        /*
+         * حتى إذا رمى الاتصال خطأ،
+         * نحاول استعادة الجلسة والبيانات المحفوظة.
+         */
+        try {
+            const { data } = await db.auth.getSession();
+
+            if (data.session && data.session.user) {
+                return getOfflineSession(data.session.user);
+            }
+        } catch (sessionError) {
+            console.error(
+                "LOCAL SESSION RESTORE ERROR:",
+                sessionError
+            );
+        }
 
         return {
             authenticated: false,
@@ -460,13 +487,15 @@ async function checkSession() {
 ===================================== */
 
 window.SynapseAuth = {
-    login,
-    register,
-    logout,
-    getProfile,
-    checkSession
+    login: login,
+    register: register,
+    logout: logout,
+    getProfile: getProfile,
+    checkSession: checkSession
 };
 
-console.log("SynapseMed Authentication module loaded.");
+console.log(
+    "SynapseMed Authentication module loaded."
+);
 
 })();
