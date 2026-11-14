@@ -11,24 +11,53 @@ if (!db) {
 const style = document.createElement("style");
 
 style.textContent = `
-    #adminStudentsButton {
-        position: fixed;
-        bottom: calc(130px + env(safe-area-inset-bottom, 0px));
-        left: 18px;
-        z-index: 9998;
-        border: 0;
-        border-radius: 14px;
-        padding: 13px 18px;
-        background: #0d9488;
-        color: white;
-        font-weight: bold;
-        cursor: pointer;
-        box-shadow: 0 5px 20px #0005;
+    #adminToolbar {
         display: none;
+        margin: 18px 0 24px;
+        padding: 16px;
+        background: linear-gradient(145deg, #142c3d, #101b2c);
+        border: 1px solid rgba(36,214,193,.22);
+        border-radius: 18px;
+        direction: rtl;
     }
 
-    #adminStudentsButton:active {
-        transform: scale(0.97);
+    #adminToolbar.visible {
+        display: block;
+    }
+
+    .admin-toolbar-title {
+        color: #5eead4;
+        font-size: 15px;
+        font-weight: bold;
+        margin-bottom: 13px;
+    }
+
+    .admin-toolbar-actions {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+    }
+
+    .admin-toolbar-btn {
+        min-height: 55px;
+        border: 1px solid rgba(36,214,193,.2);
+        border-radius: 12px;
+        background: rgba(36,214,193,.09);
+        color: #ccfbf1;
+        padding: 11px 8px;
+        font-size: 12px;
+        font-weight: bold;
+        cursor: pointer;
+    }
+
+    .admin-toolbar-btn:active {
+        transform: scale(.97);
+    }
+
+    .admin-toolbar-btn span {
+        display: block;
+        font-size: 21px;
+        margin-bottom: 5px;
     }
 
     #adminStudentsPanel {
@@ -125,7 +154,7 @@ style.textContent = `
 
     .admin-approve:disabled,
     .admin-reject:disabled {
-        opacity: 0.5;
+        opacity: .5;
         cursor: not-allowed;
     }
 
@@ -135,18 +164,55 @@ style.textContent = `
         text-align: center;
     }
 
-    @media (max-height: 600px) {
-        #adminStudentsButton {
-            bottom: calc(90px + env(safe-area-inset-bottom, 0px));
+    @media(max-width:350px) {
+        .admin-toolbar-actions {
+            grid-template-columns: 1fr;
         }
     }
 `;
 
 document.head.appendChild(style);
 
-const button = document.createElement("button");
-button.id = "adminStudentsButton";
-button.textContent = "👥 طلبات الطلاب";
+/* ADMIN TOOLBAR */
+
+const toolbar = document.createElement("section");
+toolbar.id = "adminToolbar";
+
+toolbar.innerHTML = `
+    <div class="admin-toolbar-title">
+        🛠️ أدوات الإدارة
+    </div>
+
+    <div class="admin-toolbar-actions">
+
+        <button
+            type="button"
+            class="admin-toolbar-btn"
+            id="adminOpenStudents">
+            <span>👥</span>
+            طلبات الطلاب
+        </button>
+
+        <button
+            type="button"
+            class="admin-toolbar-btn"
+            id="adminOpenSimulators">
+            <span>🧬</span>
+            إدارة المحاكيات
+        </button>
+
+    </div>
+`;
+
+const main = document.querySelector("main.container");
+
+if (main) {
+    main.prepend(toolbar);
+} else {
+    console.error("SynapseMed: Main container not found.");
+}
+
+/* STUDENTS PANEL */
 
 const panel = document.createElement("section");
 panel.id = "adminStudentsPanel";
@@ -154,6 +220,7 @@ panel.id = "adminStudentsPanel";
 panel.innerHTML = `
     <div class="admin-panel-header">
         <h2>إدارة طلبات الطلاب</h2>
+
         <button class="admin-close" id="adminClosePanel">
             إغلاق ✕
         </button>
@@ -168,9 +235,11 @@ panel.innerHTML = `
     </div>
 `;
 
-document.body.append(button, panel);
+document.body.appendChild(panel);
 
 const list = panel.querySelector("#adminStudentsList");
+
+/* HELPERS */
 
 function escapeHTML(value) {
     return String(value ?? "").replace(/[&<>"']/g, function (char) {
@@ -184,7 +253,10 @@ function escapeHTML(value) {
     });
 }
 
+/* LOAD STUDENTS */
+
 async function loadStudents() {
+
     list.innerHTML = `
         <p class="admin-message">جارٍ تحميل الطلبات...</p>
     `;
@@ -198,7 +270,8 @@ async function loadStudents() {
 
         list.innerHTML = `
             <p class="admin-message">
-                تعذر تحميل الطلبات. تحقق من الاتصال والصلاحيات.
+                تعذر تحميل الطلبات.
+                تحقق من الاتصال والصلاحيات.
             </p>
         `;
         return;
@@ -215,11 +288,18 @@ async function loadStudents() {
 
     list.innerHTML = data.map(student => `
         <article class="admin-student-card">
-            <h3>${escapeHTML(student.display_name || "طالب جديد")}</h3>
 
-            <p>📧 البريد: ${escapeHTML(student.email)}</p>
+            <h3>
+                ${escapeHTML(student.display_name || "طالب جديد")}
+            </h3>
 
-            <p>🕒 تاريخ التسجيل:
+            <p>
+                📧 البريد:
+                ${escapeHTML(student.email)}
+            </p>
+
+            <p>
+                🕒 تاريخ التسجيل:
                 ${escapeHTML(
                     student.created_at
                         ? new Date(student.created_at).toLocaleString("ar")
@@ -228,6 +308,7 @@ async function loadStudents() {
             </p>
 
             <div class="admin-actions">
+
                 <button
                     class="admin-approve"
                     data-id="${escapeHTML(student.user_id)}"
@@ -241,13 +322,19 @@ async function loadStudents() {
                     data-status="rejected">
                     ✕ رفض
                 </button>
+
             </div>
+
         </article>
     `).join("");
 }
 
+/* REVIEW STUDENT */
+
 async function reviewStudent(userId, status) {
-    const action = status === "approved" ? "الموافقة على" : "رفض";
+
+    const action =
+        status === "approved" ? "الموافقة على" : "رفض";
 
     if (!confirm(`هل تريد ${action} طلب هذا الطالب؟`)) {
         return;
@@ -269,7 +356,9 @@ async function reviewStudent(userId, status) {
 
     if (error) {
         console.error("Review student error:", error);
+
         alert("تعذر تنفيذ العملية. يرجى المحاولة مجدداً.");
+
         buttons.forEach(btn => btn.disabled = false);
         return;
     }
@@ -283,7 +372,10 @@ async function reviewStudent(userId, status) {
     await loadStudents();
 }
 
+/* EVENTS */
+
 list.addEventListener("click", function (event) {
+
     const btn = event.target.closest("[data-id]");
 
     if (!btn) return;
@@ -294,10 +386,22 @@ list.addEventListener("click", function (event) {
     );
 });
 
-button.addEventListener("click", async function () {
-    panel.style.display = "block";
-    await loadStudents();
-});
+toolbar.querySelector("#adminOpenStudents").addEventListener(
+    "click",
+    async function () {
+        panel.style.display = "block";
+        await loadStudents();
+    }
+);
+
+toolbar.querySelector("#adminOpenSimulators").addEventListener(
+    "click",
+    function () {
+        alert(
+            "إدارة المحاكيات قيد التجهيز.\nسيتم تفعيل الإضافة والتعديل والحذف بعد ربطها بقاعدة البيانات."
+        );
+    }
+);
 
 panel.querySelector("#adminClosePanel").addEventListener(
     "click",
@@ -311,11 +415,14 @@ panel.querySelector("#adminRefresh").addEventListener(
     loadStudents
 );
 
-// تحديث ظهور الزر حسب صلاحيات المستخدم.
+/* ADMIN VISIBILITY */
+
 async function refreshAdminVisibility() {
+
     try {
+
         if (!window.SynapseAuth) {
-            button.style.display = "none";
+            toolbar.classList.remove("visible");
             return;
         }
 
@@ -326,26 +433,31 @@ async function refreshAdminVisibility() {
             result.approved &&
             result.role === "admin";
 
-        button.style.display = isAdmin ? "block" : "none";
+        toolbar.classList.toggle("visible", isAdmin);
 
         if (!isAdmin) {
             panel.style.display = "none";
         }
 
     } catch (error) {
+
         console.error("Admin visibility check failed:", error);
-        button.style.display = "none";
+
+        toolbar.classList.remove("visible");
         panel.style.display = "none";
     }
 }
+
+/* PUBLIC API */
 
 window.SynapseAdmin = {
     refresh: refreshAdminVisibility
 };
 
-// الفحص الأول عند تحميل التطبيق.
+/* INITIAL CHECK */
+
 refreshAdminVisibility();
 
-console.log("SynapseMed Admin Panel loaded.");
+console.log("SynapseMed Admin Tools loaded.");
 
 })();
