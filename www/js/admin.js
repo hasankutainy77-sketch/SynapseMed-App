@@ -13,7 +13,7 @@ const style = document.createElement("style");
 style.textContent = `
     #adminStudentsButton {
         position: fixed;
-        bottom: 22px;
+        bottom: calc(130px + env(safe-area-inset-bottom, 0px));
         left: 18px;
         z-index: 9998;
         border: 0;
@@ -27,6 +27,10 @@ style.textContent = `
         display: none;
     }
 
+    #adminStudentsButton:active {
+        transform: scale(0.97);
+    }
+
     #adminStudentsPanel {
         position: fixed;
         inset: 0;
@@ -34,10 +38,12 @@ style.textContent = `
         background: #07111f;
         color: #f1f5f9;
         padding: 22px;
+        padding-bottom: calc(22px + env(safe-area-inset-bottom, 0px));
         overflow-y: auto;
         display: none;
         direction: rtl;
         font-family: Arial, sans-serif;
+        box-sizing: border-box;
     }
 
     .admin-panel-header {
@@ -117,10 +123,22 @@ style.textContent = `
         background: #b91c1c;
     }
 
+    .admin-approve:disabled,
+    .admin-reject:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
     .admin-message {
         color: #cbd5e1;
         padding: 20px 5px;
         text-align: center;
+    }
+
+    @media (max-height: 600px) {
+        #adminStudentsButton {
+            bottom: calc(90px + env(safe-area-inset-bottom, 0px));
+        }
     }
 `;
 
@@ -293,7 +311,7 @@ panel.querySelector("#adminRefresh").addEventListener(
     loadStudents
 );
 
-// هذه الدالة يمكن استدعاؤها بعد تسجيل الدخول أو الخروج.
+// تحديث ظهور الزر حسب صلاحيات المستخدم.
 async function refreshAdminVisibility() {
     try {
         if (!window.SynapseAuth) {
@@ -321,7 +339,6 @@ async function refreshAdminVisibility() {
     }
 }
 
-// نجعل الدالة متاحة لملف index.html.
 window.SynapseAdmin = {
     refresh: refreshAdminVisibility
 };
