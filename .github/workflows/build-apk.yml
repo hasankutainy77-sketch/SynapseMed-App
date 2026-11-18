@@ -84,7 +84,6 @@ jobs:
               icon.save(folder / "ic_launcher.png")
               icon.save(folder / "ic_launcher_round.png")
 
-          # Adaptive icon foreground
           folder = res / "drawable"
           folder.mkdir(parents=True, exist_ok=True)
 
@@ -99,16 +98,10 @@ jobs:
               Image.Resampling.LANCZOS
           )
 
-          foreground.alpha_composite(
-              artwork,
-              (84, 84)
-          )
+          foreground.alpha_composite(artwork, (84, 84))
+          foreground.save(folder / "ic_launcher_foreground.png")
 
-          foreground.save(
-              folder / "ic_launcher_foreground.png"
-          )
-
-          print("All launcher icon images generated successfully.")
+          print("Launcher images generated successfully.")
           PY
 
       - name: Create Adaptive Icon resources
@@ -140,17 +133,20 @@ jobs:
           import xml.etree.ElementTree as ET
           from pathlib import Path
 
-          manifest = Path(
-              "android/app/src/main/AndroidManifest.xml"
-          )
+          manifest = Path("android/app/src/main/AndroidManifest.xml")
 
           if not manifest.exists():
               raise SystemExit("ERROR: AndroidManifest.xml not found")
 
+          android_uri = "http://schemas.android.com/apk/res/android"
+
+          # Preserve the required Android namespace prefix.
+          ET.register_namespace("android", android_uri)
+
           tree = ET.parse(manifest)
           root = tree.getroot()
 
-          android = "{http://schemas.android.com/apk/res/android}"
+          android = "{" + android_uri + "}"
 
           application = root.find("application")
 
@@ -173,6 +169,16 @@ jobs:
               xml_declaration=True
           )
 
+          # Verify the manifest still contains the Android namespace.
+          check = ET.parse(manifest)
+          app = check.getroot().find("application")
+
+          if app.get(android + "icon") != "@mipmap/ic_launcher":
+              raise SystemExit("ERROR: Launcher icon link failed")
+
+          if app.get(android + "roundIcon") != "@mipmap/ic_launcher_round":
+              raise SystemExit("ERROR: Round launcher icon link failed")
+
           res = Path("android/app/src/main/res")
 
           required = [
@@ -181,23 +187,25 @@ jobs:
               res / "mipmap-xhdpi/ic_launcher.png",
               res / "mipmap-xxhdpi/ic_launcher.png",
               res / "mipmap-xxxhdpi/ic_launcher.png",
+              res / "mipmap-mdpi/ic_launcher_round.png",
+              res / "mipmap-hdpi/ic_launcher_round.png",
+              res / "mipmap-xhdpi/ic_launcher_round.png",
+              res / "mipmap-xxhdpi/ic_launcher_round.png",
+              res / "mipmap-xxxhdpi/ic_launcher_round.png",
               res / "mipmap-anydpi-v26/ic_launcher.xml",
               res / "mipmap-anydpi-v26/ic_launcher_round.xml",
               res / "drawable/ic_launcher_foreground.png",
+              res / "values/ic_launcher_background.xml"
           ]
 
-          missing = [
-              str(path)
-              for path in required
-              if not path.exists()
-          ]
+          missing = [str(p) for p in required if not p.exists()]
 
           if missing:
               raise SystemExit(
                   "Missing icon resources: " + ", ".join(missing)
               )
 
-          print("SUCCESS: Launcher icons generated, linked and verified.")
+          print("SUCCESS: Launcher icons linked and verified.")
           PY
 
       - name: Build APK
