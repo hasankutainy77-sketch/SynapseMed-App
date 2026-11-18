@@ -1,222 +1,250 @@
 name: Build SynapseMed APK
 
 on:
-  push:
-    branches: [main]
-  workflow_dispatch:
+push:
+branches: [main]
+workflow_dispatch:
 
 permissions:
-  contents: read
+contents: read
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
+build:
+runs-on: ubuntu-latest
 
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+steps:
+  - name: Checkout repository
+    uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
+  - name: Setup Node.js
+    uses: actions/setup-node@v4
+    with:
+      node-version: 20
 
-      - name: Setup Java
-        uses: actions/setup-java@v5
-        with:
-          distribution: temurin
-          java-version: 17
+  - name: Setup Java
+    uses: actions/setup-java@v5
+    with:
+      distribution: temurin
+      java-version: 17
 
-      - name: Install dependencies
-        run: npm install
+  - name: Install dependencies
+    run: npm install
 
-      - name: Add Android platform
-        run: npx cap add android
+  - name: Add Android platform
+    run: npx cap add android
 
-      - name: Sync Capacitor
-        run: npx cap sync android
+  - name: Sync Capacitor
+    run: npx cap sync android
 
-      - name: Install Pillow
-        run: python3 -m pip install --user Pillow
+  - name: Install Pillow
+    run: python3 -m pip install --user Pillow
 
-      - name: Generate SynapseMed launcher icons
-        run: |
-          python3 <<'PY'
-          from PIL import Image
-          from pathlib import Path
+  - name: Generate SynapseMed launcher icons
+    run: |
+      python3 <<'PY'
+      from PIL import Image
+      from pathlib import Path
 
-          source = Path("icon-only.png")
+      source = Path("icon-only.png")
 
-          if not source.exists():
-              raise SystemExit("ERROR: icon-only.png not found!")
+      if not source.exists():
+          raise SystemExit("ERROR: icon-only.png not found!")
 
-          image = Image.open(source).convert("RGBA")
+      image = Image.open(source).convert("RGBA")
 
-          width, height = image.size
-          side = min(width, height)
+      width, height = image.size
+      side = min(width, height)
 
-          image = image.crop((
-              (width - side) // 2,
-              (height - side) // 2,
-              (width + side) // 2,
-              (height + side) // 2
-          ))
+      image = image.crop((
+          (width - side) // 2,
+          (height - side) // 2,
+          (width + side) // 2,
+          (height + side) // 2
+      ))
 
-          res = Path("android/app/src/main/res")
+      res = Path("android/app/src/main/res")
 
-          densities = {
-              "mdpi": 48,
-              "hdpi": 72,
-              "xhdpi": 96,
-              "xxhdpi": 144,
-              "xxxhdpi": 192
-          }
+      densities = {
+          "mdpi": 48,
+          "hdpi": 72,
+          "xhdpi": 96,
+          "xxhdpi": 144,
+          "xxxhdpi": 192
+      }
 
-          for density, size in densities.items():
-              folder = res / f"mipmap-{density}"
-              folder.mkdir(parents=True, exist_ok=True)
-
-              icon = image.resize(
-                  (size, size),
-                  Image.Resampling.LANCZOS
-              )
-
-              icon.save(folder / "ic_launcher.png")
-              icon.save(folder / "ic_launcher_round.png")
-
-          folder = res / "drawable"
+      for density, size in densities.items():
+          folder = res / f"mipmap-{density}"
           folder.mkdir(parents=True, exist_ok=True)
 
-          foreground = Image.new(
-              "RGBA",
-              (432, 432),
-              (0, 0, 0, 0)
-          )
-
-          artwork = image.resize(
-              (264, 264),
+          icon = image.resize(
+              (size, size),
               Image.Resampling.LANCZOS
           )
 
-          foreground.alpha_composite(artwork, (84, 84))
-          foreground.save(folder / "ic_launcher_foreground.png")
+          icon.save(folder / "ic_launcher.png")
+          icon.save(folder / "ic_launcher_round.png")
 
-          print("Launcher images generated successfully.")
-          PY
+      folder = res / "drawable"
+      folder.mkdir(parents=True, exist_ok=True)
 
-      - name: Create Adaptive Icon resources
-        run: |
-          mkdir -p android/app/src/main/res/values
-          mkdir -p android/app/src/main/res/mipmap-anydpi-v26
+      foreground = Image.new(
+          "RGBA",
+          (432, 432),
+          (0, 0, 0, 0)
+      )
 
-          cat > android/app/src/main/res/values/ic_launcher_background.xml <<'EOF'
-          <?xml version="1.0" encoding="utf-8"?>
-          <resources>
-              <color name="ic_launcher_background">#063A78</color>
-          </resources>
-          EOF
+      artwork = image.resize(
+          (264, 264),
+          Image.Resampling.LANCZOS
+      )
 
-          cat > android/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml <<'EOF'
-          <?xml version="1.0" encoding="utf-8"?>
-          <adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
-              <background android:drawable="@color/ic_launcher_background"/>
-              <foreground android:drawable="@drawable/ic_launcher_foreground"/>
-          </adaptive-icon>
-          EOF
+      foreground.alpha_composite(artwork, (84, 84))
+      foreground.save(folder / "ic_launcher_foreground.png")
 
-          cp android/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml \
-             android/app/src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml
+      print("Launcher images generated successfully.")
+      PY
 
-      - name: Link and verify launcher icons
-        run: |
-          python3 <<'PY'
-          import xml.etree.ElementTree as ET
-          from pathlib import Path
+  - name: Create Adaptive Icon resources
+    run: |
+      mkdir -p android/app/src/main/res/values
+      mkdir -p android/app/src/main/res/mipmap-anydpi-v26
 
-          manifest = Path("android/app/src/main/AndroidManifest.xml")
+      cat > android/app/src/main/res/values/ic_launcher_background.xml <<'EOF'
+      <?xml version="1.0" encoding="utf-8"?>
+      <resources>
+          <color name="ic_launcher_background">#063A78</color>
+      </resources>
+      EOF
 
-          if not manifest.exists():
-              raise SystemExit("ERROR: AndroidManifest.xml not found")
+      cat > android/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml <<'EOF'
+      <?xml version="1.0" encoding="utf-8"?>
+      <adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
+          <background android:drawable="@color/ic_launcher_background"/>
+          <foreground android:drawable="@drawable/ic_launcher_foreground"/>
+      </adaptive-icon>
+      EOF
 
-          android_uri = "http://schemas.android.com/apk/res/android"
+      cp android/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml \
+         android/app/src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml
 
-          # Preserve the required Android namespace prefix.
-          ET.register_namespace("android", android_uri)
+  - name: Link and verify launcher icons
+    run: |
+      python3 <<'PY'
+      import xml.etree.ElementTree as ET
+      from pathlib import Path
 
-          tree = ET.parse(manifest)
-          root = tree.getroot()
+      manifest = Path("android/app/src/main/AndroidManifest.xml")
 
-          android = "{" + android_uri + "}"
+      if not manifest.exists():
+          raise SystemExit("ERROR: AndroidManifest.xml not found")
 
-          application = root.find("application")
+      android_uri = "http://schemas.android.com/apk/res/android"
 
-          if application is None:
-              raise SystemExit("ERROR: application element not found")
+      ET.register_namespace("android", android_uri)
 
-          application.set(
-              android + "icon",
-              "@mipmap/ic_launcher"
+      tree = ET.parse(manifest)
+      root = tree.getroot()
+
+      android = "{" + android_uri + "}"
+
+      application = root.find("application")
+
+      if application is None:
+          raise SystemExit("ERROR: application element not found")
+
+      application.set(
+          android + "icon",
+          "@mipmap/ic_launcher"
+      )
+
+      application.set(
+          android + "roundIcon",
+          "@mipmap/ic_launcher_round"
+      )
+
+      tree.write(
+          manifest,
+          encoding="utf-8",
+          xml_declaration=True
+      )
+
+      check = ET.parse(manifest)
+      app = check.getroot().find("application")
+
+      if app.get(android + "icon") != "@mipmap/ic_launcher":
+          raise SystemExit("ERROR: Launcher icon link failed")
+
+      if app.get(android + "roundIcon") != "@mipmap/ic_launcher_round":
+          raise SystemExit("ERROR: Round launcher icon link failed")
+
+      res = Path("android/app/src/main/res")
+
+      required = [
+          res / "mipmap-mdpi/ic_launcher.png",
+          res / "mipmap-hdpi/ic_launcher.png",
+          res / "mipmap-xhdpi/ic_launcher.png",
+          res / "mipmap-xxhdpi/ic_launcher.png",
+          res / "mipmap-xxxhdpi/ic_launcher.png",
+          res / "mipmap-mdpi/ic_launcher_round.png",
+          res / "mipmap-hdpi/ic_launcher_round.png",
+          res / "mipmap-xhdpi/ic_launcher_round.png",
+          res / "mipmap-xxhdpi/ic_launcher_round.png",
+          res / "mipmap-xxxhdpi/ic_launcher_round.png",
+          res / "mipmap-anydpi-v26/ic_launcher.xml",
+          res / "mipmap-anydpi-v26/ic_launcher_round.xml",
+          res / "drawable/ic_launcher_foreground.png",
+          res / "values/ic_launcher_background.xml"
+      ]
+
+      missing = [str(p) for p in required if not p.exists()]
+
+      if missing:
+          raise SystemExit(
+              "Missing icon resources: " + ", ".join(missing)
           )
 
-          application.set(
-              android + "roundIcon",
-              "@mipmap/ic_launcher_round"
-          )
+      print("SUCCESS: Launcher icons linked and verified.")
+      PY
 
-          tree.write(
-              manifest,
-              encoding="utf-8",
-              xml_declaration=True
-          )
+  - name: Build APK
+    run: |
+      cd android
+      chmod +x gradlew
+      ./gradlew assembleDebug
 
-          # Verify the manifest still contains the Android namespace.
-          check = ET.parse(manifest)
-          app = check.getroot().find("application")
+  - name: Diagnose final APK launcher icon
+    run: |
+      APK="android/app/build/outputs/apk/debug/app-debug.apk"
 
-          if app.get(android + "icon") != "@mipmap/ic_launcher":
-              raise SystemExit("ERROR: Launcher icon link failed")
+      if [ ! -f "$APK" ]; then
+        echo "ERROR: APK not found!"
+        exit 1
+      fi
 
-          if app.get(android + "roundIcon") != "@mipmap/ic_launcher_round":
-              raise SystemExit("ERROR: Round launcher icon link failed")
+      AAPT=$(find "$ANDROID_HOME/build-tools" -name aapt -type f | sort -V | tail -n 1)
 
-          res = Path("android/app/src/main/res")
+      if [ -z "$AAPT" ]; then
+        echo "ERROR: aapt not found!"
+        exit 1
+      fi
 
-          required = [
-              res / "mipmap-mdpi/ic_launcher.png",
-              res / "mipmap-hdpi/ic_launcher.png",
-              res / "mipmap-xhdpi/ic_launcher.png",
-              res / "mipmap-xxhdpi/ic_launcher.png",
-              res / "mipmap-xxxhdpi/ic_launcher.png",
-              res / "mipmap-mdpi/ic_launcher_round.png",
-              res / "mipmap-hdpi/ic_launcher_round.png",
-              res / "mipmap-xhdpi/ic_launcher_round.png",
-              res / "mipmap-xxhdpi/ic_launcher_round.png",
-              res / "mipmap-xxxhdpi/ic_launcher_round.png",
-              res / "mipmap-anydpi-v26/ic_launcher.xml",
-              res / "mipmap-anydpi-v26/ic_launcher_round.xml",
-              res / "drawable/ic_launcher_foreground.png",
-              res / "values/ic_launcher_background.xml"
-          ]
+      echo "========== APK PACKAGE AND ICON =========="
+      "$AAPT" dump badging "$APK" | grep -E "package:|application-label:|application-icon"
 
-          missing = [str(p) for p in required if not p.exists()]
+      echo "========== APK MANIFEST ICON REFERENCES =========="
+      "$AAPT" dump xmltree "$APK" AndroidManifest.xml | grep -A 4 -B 3 -E "android:icon|android:roundIcon"
 
-          if missing:
-              raise SystemExit(
-                  "Missing icon resources: " + ", ".join(missing)
-              )
+      echo "========== APK LAUNCHER RESOURCES =========="
+      "$AAPT" dump resources "$APK" | grep -A 5 -B 2 -E "mipmap/ic_launcher|drawable/ic_launcher" || true
 
-          print("SUCCESS: Launcher icons linked and verified.")
-          PY
+      echo "========== SOURCE MANIFEST =========="
+      grep -n "android:icon\\|android:roundIcon" android/app/src/main/AndroidManifest.xml
 
-      - name: Build APK
-        run: |
-          cd android
-          chmod +x gradlew
-          ./gradlew assembleDebug
+      echo "========== DIAGNOSTIC COMPLETE =========="
 
-      - name: Upload APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: SynapseMed-APK
-          path: android/app/build/outputs/apk/debug/app-debug.apk
-          if-no-files-found: error
+  - name: Upload APK
+    uses: actions/upload-artifact@v4
+    with:
+      name: SynapseMed-APK
+      path: android/app/build/outputs/apk/debug/app-debug.apk
+      if-no-files-found: error
