@@ -33,10 +33,14 @@ jobs:
       - name: Add Android platform
         run: npx cap add android
 
+      - name: Sync Capacitor
+        run: npx cap sync android
+
+      - name: Install Pillow
+        run: python3 -m pip install --user Pillow
+
       - name: Generate SynapseMed launcher icons
         run: |
-          python3 -m pip install --user Pillow
-
           python3 <<'PY'
           from PIL import Image
           from pathlib import Path
@@ -44,7 +48,7 @@ jobs:
           source = Path("icon-only.png")
 
           if not source.exists():
-              raise SystemExit("ERROR: icon-only.png not found")
+              raise SystemExit("ERROR: icon-only.png not found!")
 
           image = Image.open(source).convert("RGBA")
 
@@ -80,17 +84,31 @@ jobs:
               icon.save(folder / "ic_launcher.png")
               icon.save(folder / "ic_launcher_round.png")
 
-          # Adaptive foreground artwork
+          # Adaptive icon foreground
           folder = res / "drawable"
           folder.mkdir(parents=True, exist_ok=True)
 
-          foreground = Image.new("RGBA", (432, 432), (0, 0, 0, 0))
-          artwork = image.resize((360, 360), Image.Resampling.LANCZOS)
+          foreground = Image.new(
+              "RGBA",
+              (432, 432),
+              (0, 0, 0, 0)
+          )
 
-          foreground.alpha_composite(artwork, (36, 36))
-          foreground.save(folder / "ic_launcher_foreground.png")
+          artwork = image.resize(
+              (264, 264),
+              Image.Resampling.LANCZOS
+          )
 
-          print("Launcher icon images generated.")
+          foreground.alpha_composite(
+              artwork,
+              (84, 84)
+          )
+
+          foreground.save(
+              folder / "ic_launcher_foreground.png"
+          )
+
+          print("All launcher icon images generated successfully.")
           PY
 
       - name: Create Adaptive Icon resources
@@ -116,8 +134,71 @@ jobs:
           cp android/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml \
              android/app/src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml
 
-      - name: Sync Capacitor
-        run: npx cap sync android
+      - name: Link and verify launcher icons
+        run: |
+          python3 <<'PY'
+          import xml.etree.ElementTree as ET
+          from pathlib import Path
+
+          manifest = Path(
+              "android/app/src/main/AndroidManifest.xml"
+          )
+
+          if not manifest.exists():
+              raise SystemExit("ERROR: AndroidManifest.xml not found")
+
+          tree = ET.parse(manifest)
+          root = tree.getroot()
+
+          android = "{http://schemas.android.com/apk/res/android}"
+
+          application = root.find("application")
+
+          if application is None:
+              raise SystemExit("ERROR: application element not found")
+
+          application.set(
+              android + "icon",
+              "@mipmap/ic_launcher"
+          )
+
+          application.set(
+              android + "roundIcon",
+              "@mipmap/ic_launcher_round"
+          )
+
+          tree.write(
+              manifest,
+              encoding="utf-8",
+              xml_declaration=True
+          )
+
+          res = Path("android/app/src/main/res")
+
+          required = [
+              res / "mipmap-mdpi/ic_launcher.png",
+              res / "mipmap-hdpi/ic_launcher.png",
+              res / "mipmap-xhdpi/ic_launcher.png",
+              res / "mipmap-xxhdpi/ic_launcher.png",
+              res / "mipmap-xxxhdpi/ic_launcher.png",
+              res / "mipmap-anydpi-v26/ic_launcher.xml",
+              res / "mipmap-anydpi-v26/ic_launcher_round.xml",
+              res / "drawable/ic_launcher_foreground.png",
+          ]
+
+          missing = [
+              str(path)
+              for path in required
+              if not path.exists()
+          ]
+
+          if missing:
+              raise SystemExit(
+                  "Missing icon resources: " + ", ".join(missing)
+              )
+
+          print("SUCCESS: Launcher icons generated, linked and verified.")
+          PY
 
       - name: Build APK
         run: |
