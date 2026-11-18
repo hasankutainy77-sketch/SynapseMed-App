@@ -1,16 +1,16 @@
 name: Build SynapseMed APK
 
 'on':
-push:
-branches: [main]
-workflow_dispatch:
+  push:
+    branches: [main]
+  workflow_dispatch:
 
 permissions:
-contents: read
+  contents: read
 
 jobs:
-build:
-runs-on: ubuntu-latest
+  build:
+    runs-on: ubuntu-latest
 
 steps:
   - name: Checkout repository
