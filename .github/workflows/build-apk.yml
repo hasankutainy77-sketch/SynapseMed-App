@@ -1,9 +1,8 @@
 name: Build SynapseMed APK
 
-'on':
+on:
   push:
-    branches:
-      - main
+    branches: [main]
   workflow_dispatch:
 
 permissions:
@@ -23,7 +22,7 @@ jobs:
           node-version: 20
 
       - name: Setup Java
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: 17
@@ -34,84 +33,104 @@ jobs:
       - name: Add Android platform
         run: npx cap add android
 
-      - name: Prepare icon source
+      - name: Generate app icons
         run: |
-          set -e
-
-          if [ ! -f "assets/icon-only.png" ]; then
-            echo "ERROR: assets/icon-only.png not found"
-            exit 1
-          fi
-
           mkdir -p assets
-
           cp assets/icon-only.png assets/icon.png
-
-          echo "Icon source prepared:"
-          ls -lh assets/icon.png
-
-      - name: Generate Android launcher icons
-        run: |
-          npx --yes @capacitor/assets generate \
-            --android \
-            --iconBackgroundColor '#063A78' \
-            --iconBackgroundColorDark '#063A78'
+          npx --yes @capacitor/assets generate --android --iconBackgroundColor '#063A78' --iconBackgroundColorDark '#063A78'
 
       - name: Sync Capacitor
         run: npx cap sync android
 
-      - name: Verify generated icon resources
+      - name: Configure Android Back Button
         run: |
-          set -e
+          mkdir -p android/app/src/main/java/com/synapsemed/app
 
-          RES="android/app/src/main/res"
+          cat > android/app/src/main/java/com/synapsemed/app/MainActivity.java <<'EOF'
+          package com.synapsemed.app;
 
-          echo "===== GENERATED ICON FILES ====="
-          find "$RES" -type f | grep -E 'ic_launcher|launcher' || true
+          import android.webkit.WebView;
+          import android.os.Handler;
+          import android.os.Looper;
 
-          echo "===== ADAPTIVE ICON FILES ====="
-          find "$RES" -type f -name "*.xml" | grep -E 'mipmap|launcher' || true
+          import com.getcapacitor.BridgeActivity;
 
-          if [ ! -d "$RES/mipmap-anydpi-v26" ]; then
-            echo "WARNING: Adaptive icon directory not found"
-          fi
+          public class MainActivity extends BridgeActivity {
+
+              private boolean backPressedOnce = false;
+
+              @Override
+              public void onBackPressed() {
+
+                  if (bridge == null || bridge.getWebView() == null) {
+                      super.onBackPressed();
+                      return;
+                  }
+
+                  WebView webView = bridge.getWebView();
+
+                  String currentUrl = webView.getUrl();
+
+                  if (currentUrl == null) {
+                      super.onBackPressed();
+                      return;
+                  }
+
+                  // إذا كان المستخدم داخل محاكي مستقل
+                  // نعيده إلى الصفحة الرئيسية للتطبيق.
+                  if (!currentUrl.contains("/index.html")
+                      && !currentUrl.endsWith("localhost/")
+                      && !currentUrl.endsWith("localhost")) {
+
+                      webView.post(() -> {
+                          webView.loadUrl("https://localhost/index.html");
+                      });
+
+                      return;
+                  }
+
+                  // داخل الصفحة الرئيسية:
+                  // استدعاء دالة الرجوع الموجودة في index.html
+                  webView.evaluateJavascript(
+                      "window.handleAndroidBack ? window.handleAndroidBack() : 'exit'",
+                      result -> {
+
+                          if ("\"handled\"".equals(result)) {
+                              return;
+                          }
+
+                          // إذا كان المستخدم على الصفحة الرئيسية
+                          // نسمح بإغلاق التطبيق.
+                          super.onBackPressed();
+                      }
+                  );
+              }
+          }
+          EOF
 
       - name: Build APK
         run: |
           cd android
-          chmod +x gradlew
           ./gradlew assembleDebug
 
-      - name: Verify APK launcher icon
+      - name: Verify APK
         run: |
-          set -e
-
           APK="android/app/build/outputs/apk/debug/app-debug.apk"
 
           if [ ! -f "$APK" ]; then
-            echo "ERROR: APK not found"
+            echo "APK not found!"
             exit 1
           fi
 
-          AAPT=$(find "$ANDROID_HOME/build-tools" -name aapt | sort -V | tail -n 1)
+          echo "APK successfully built"
 
-          if [ -z "$AAPT" ]; then
-            echo "ERROR: aapt not found"
-            exit 1
+          if command -v aapt >/dev/null 2>&1; then
+            aapt dump badging "$APK" | head -20
           fi
-
-          echo "===== APK APPLICATION ====="
-          "$AAPT" dump badging "$APK" | grep -E "application:|application-icon"
-
-          echo "===== APK ICON RESOURCES ====="
-          unzip -l "$APK" | grep -E "ic_launcher|mipmap" || true
-
-          echo "===== MANIFEST ICON ====="
-          "$AAPT" dump xmltree "$APK" AndroidManifest.xml | grep -A 5 -B 3 "icon"
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: SynapseMed-APK
           path: android/app/build/outputs/apk/debug/app-debug.apk
-          if-no-files-found: error
+          retention-days: 30
