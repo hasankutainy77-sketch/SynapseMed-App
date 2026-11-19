@@ -401,10 +401,9 @@ function enterApplication(role){
   if(window.SynapseAdmin) window.SynapseAdmin.refresh();
 }
 
-/* SESSION INITIALIZATION - UPDATED */
+/* SESSION INITIALIZATION */
 async function initializeAuthentication(){
   let timeoutId=null;
-  let timedOut=false;
 
   try{
     if(!window.SynapseAuth){
@@ -417,7 +416,6 @@ async function initializeAuthentication(){
 
     const timeoutPromise=new Promise(resolve=>{
       timeoutId=setTimeout(()=>{
-        timedOut=true;
         resolve({timeout:true});
       },10000);
     });
@@ -431,14 +429,12 @@ async function initializeAuthentication(){
 
     if(result.timeout){
       console.warn("Session verification timed out.");
-
       document.body.classList.remove("authenticated");
 
       showAuthMessage(
         "تأخر الاتصال بالخادم. يمكنك تسجيل الدخول مجدداً.",
         "error"
       );
-
       return;
     }
 
@@ -448,7 +444,6 @@ async function initializeAuthentication(){
       if(window.SynapseAdmin){
         window.SynapseAdmin.refresh();
       }
-
       return;
     }
 
@@ -467,7 +462,6 @@ async function initializeAuthentication(){
           :"حسابك بانتظار موافقة الإدارة.",
         "error"
       );
-
       return;
     }
 
@@ -475,7 +469,6 @@ async function initializeAuthentication(){
 
   }catch(error){
     console.error("Authentication check failed:",error);
-
     document.body.classList.remove("authenticated");
 
     showAuthMessage(
@@ -494,22 +487,28 @@ loginForm.addEventListener("submit",async event=>{
   event.preventDefault();
   clearAuthMessage();
   setFormLoading(loginForm,true);
+
   try{
     const result=await window.SynapseAuth.login(
       document.getElementById("loginEmail").value,
       document.getElementById("loginPassword").value
     );
+
     if(!result.success){
       if(result.status==="pending"||result.status==="rejected")
         await window.SynapseAuth.logout();
+
       showAuthMessage(result.message,"error");
       return;
     }
+
     showAuthMessage("تم تسجيل الدخول بنجاح.","success");
     enterApplication(result.role);
+
   }catch(error){
     console.error(error);
     showAuthMessage("حدث خطأ أثناء تسجيل الدخول. حاول مجدداً.","error");
+
   }finally{
     setFormLoading(loginForm,false);
   }
@@ -520,25 +519,30 @@ registerForm.addEventListener("submit",async event=>{
   event.preventDefault();
   clearAuthMessage();
   setFormLoading(registerForm,true);
+
   try{
     const result=await window.SynapseAuth.register(
       document.getElementById("registerEmail").value,
       document.getElementById("registerPassword").value,
       document.getElementById("confirmPassword").value
     );
+
     if(!result.success){
       showAuthMessage(result.message,"error");
       return;
     }
+
     if(result.status==="pending"){
       await window.SynapseAuth.logout();
       showAuthMessage("تم إنشاء الحساب. حسابك الآن بانتظار موافقة الإدارة.","success");
     }else{
       showAuthMessage("تم إنشاء الحساب. تحقق من بريدك الإلكتروني لتأكيده، ثم انتظر موافقة الإدارة.","success");
     }
+
   }catch(error){
     console.error(error);
     showAuthMessage("تعذر إنشاء الحساب. حاول مجدداً.","error");
+
   }finally{
     setFormLoading(registerForm,false);
   }
@@ -548,6 +552,7 @@ registerForm.addEventListener("submit",async event=>{
 document.getElementById("logoutButton").addEventListener("click",async()=>{
   const button=document.getElementById("logoutButton");
   button.disabled=true;
+
   try{
     await window.SynapseAuth.logout();
     document.body.classList.remove("authenticated");
@@ -555,11 +560,15 @@ document.getElementById("logoutButton").addEventListener("click",async()=>{
     loginForm.reset();
     registerForm.reset();
     clearAuthMessage();
+
     if(window.SynapseAdmin) window.SynapseAdmin.refresh();
+
     window.scrollTo(0,0);
+
   }catch(error){
     console.error(error);
     alert("تعذر تسجيل الخروج. حاول مجدداً.");
+
   }finally{
     button.disabled=false;
   }
@@ -636,10 +645,12 @@ function rebuildCategoryFilters(){
     {id:"surgery",name:"جراحية"},
     {id:"emergency",name:"إسعافية"}
   ];
+
   const used=new Set();
 
   known.forEach(item=>{
     used.add(item.id);
+
     const button=document.createElement("button");
     button.className="filter-btn";
     button.dataset.category=item.id;
@@ -649,7 +660,9 @@ function rebuildCategoryFilters(){
 
   databaseCategories.forEach(category=>{
     const key="cat-"+category.id;
+
     if(used.has(key)||!simulators.some(sim=>sim.category===key)) return;
+
     const button=document.createElement("button");
     button.className="filter-btn";
     button.dataset.category=key;
@@ -663,13 +676,16 @@ function rebuildCategoryFilters(){
   buttons.forEach(button=>{
     const isSelected=button.dataset.category===selected;
     button.classList.toggle("active",isSelected);
+
     if(isSelected) selectionExists=true;
 
     button.addEventListener("click",()=>{
       activeCategory=button.dataset.category;
+
       filters.querySelectorAll(".filter-btn").forEach(item=>{
         item.classList.toggle("active",item===button);
       });
+
       render();
     });
   });
@@ -683,17 +699,20 @@ function rebuildCategoryFilters(){
 /* LOAD PUBLISHED SIMULATORS */
 async function loadPublishedSimulators(){
   if(loadingRemoteSimulators) return;
+
   if(!window.synapseDB){
     console.warn("Supabase client is not available; showing built-in simulators only.");
     return;
   }
 
   loadingRemoteSimulators=true;
+
   try{
     const [categoriesResult,simulatorsResult]=await Promise.all([
       window.synapseDB.from("categories")
         .select("id,name,icon,sort_order")
         .order("sort_order",{ascending:true}),
+
       window.synapseDB.from("simulators")
         .select("id,title,description,category_id,file_path,is_published,created_at")
         .eq("is_published",true)
@@ -704,6 +723,7 @@ async function loadPublishedSimulators(){
     if(simulatorsResult.error) throw simulatorsResult.error;
 
     databaseCategories=categoriesResult.data||[];
+
     const categoryMap=new Map(databaseCategories.map(category=>[
       String(category.id),category
     ]));
@@ -713,6 +733,7 @@ async function loadPublishedSimulators(){
       .map(row=>{
         const category=row.category_id
           ?categoryMap.get(String(row.category_id)):null;
+
         const rawPath=String(row.file_path).trim();
 
         const safePath=/^https:\/\//i.test(rawPath)
@@ -737,14 +758,19 @@ async function loadPublishedSimulators(){
     const uniqueRemote=remote.filter(item=>!builtInPaths.has(item.path));
 
     simulators=[...builtInSimulators,...uniqueRemote];
+
     rebuildCategoryFilters();
     render();
+
   }catch(error){
     console.error("Could not load published simulators:",error);
+
     simulators=[...builtInSimulators];
     databaseCategories=[];
+
     rebuildCategoryFilters();
     render();
+
   }finally{
     loadingRemoteSimulators=false;
   }
@@ -770,11 +796,13 @@ function saveFavorites(favorites){
 
 function toggleFavorite(id){
   let favorites=getFavorites();
+
   if(favorites.includes(id)){
     favorites=favorites.filter(item=>item!==id);
   }else{
     favorites.push(id);
   }
+
   saveFavorites(favorites);
   render();
 }
@@ -817,22 +845,55 @@ function createCard(simulator,favorites){
   favorite.type="button";
   favorite.textContent=favorites.includes(simulator.id)?"★":"☆";
   favorite.classList.toggle("active",favorites.includes(simulator.id));
-  favorite.setAttribute("aria-label",favorites.includes(simulator.id)?"إزالة من المفضلة":"إضافة إلى المفضلة");
+  favorite.setAttribute(
+    "aria-label",
+    favorites.includes(simulator.id)?"إزالة من المفضلة":"إضافة إلى المفضلة"
+  );
   favorite.addEventListener("click",()=>toggleFavorite(simulator.id));
 
   const open=document.createElement("button");
   open.className="open-btn";
   open.type="button";
   open.textContent="ابدأ الآن";
+
+  /* UPDATED SIMULATOR OPENING */
   open.addEventListener("click",()=>{
+    if(!simulator.path){
+      alert("رابط المحاكاة غير متوفر.");
+      return;
+    }
+
     try{
       sessionStorage.setItem("synapsemed_return_url",window.location.href);
+      sessionStorage.setItem("synapsemed_current_simulator",simulator.id);
     }catch(error){}
+
+    /*
+      المحاكيات المضافة من لوحة الإدارة:
+      تفتح عبر صفحة العرض المخصصة.
+    */
+    if(String(simulator.id).startsWith("remote-")){
+      try{
+        const viewerUrl=new URL("simulator-viewer.html",document.baseURI);
+        viewerUrl.searchParams.set("url",simulator.path);
+        window.location.href=viewerUrl.href;
+      }catch(error){
+        console.error("Could not open remote simulator:",error);
+        alert("تعذر فتح المحاكاة. تحقق من رابط الملف.");
+      }
+      return;
+    }
+
+    /*
+      المحاكيات الأصلية:
+      تبقى على طريقة الفتح السابقة دون تغيير.
+    */
     window.location.href=simulator.path;
   });
 
   actions.append(favorite,open);
   card.append(icon,info,actions);
+
   return card;
 }
 
@@ -852,21 +913,31 @@ function render(){
   const favorites=getFavorites();
 
   const filtered=simulators.filter(simulator=>{
-    const matchesCategory=activeCategory==="all"||simulator.category===activeCategory;
+    const matchesCategory=
+      activeCategory==="all"||simulator.category===activeCategory;
+
     const matchesSearch=normalizeText(
       simulator.title+" "+simulator.description+" "+simulator.categoryName
     ).includes(query);
-    const matchesView=currentView!=="favorites"||favorites.includes(simulator.id);
+
+    const matchesView=
+      currentView!=="favorites"||favorites.includes(simulator.id);
 
     return matchesCategory&&matchesSearch&&matchesView;
   });
 
   list.replaceChildren();
-  filtered.forEach(simulator=>list.appendChild(createCard(simulator,favorites)));
+
+  filtered.forEach(simulator=>{
+    list.appendChild(createCard(simulator,favorites));
+  });
 
   emptyState.style.display=filtered.length===0?"block":"none";
   resultCount.textContent=filtered.length+" محاكاة";
-  sectionTitle.textContent=currentView==="favorites"?"المحاكاة المفضلة":"المحاكاة المتاحة";
+
+  sectionTitle.textContent=
+    currentView==="favorites"?"المحاكاة المفضلة":"المحاكاة المتاحة";
+
   updateStats();
 }
 
@@ -937,6 +1008,7 @@ document.querySelectorAll(".nav-btn").forEach(button=>{
     if(currentView==="home"){
       activeCategory="all";
       searchInput.value="";
+
       document.querySelectorAll(".filter-btn").forEach(item=>{
         item.classList.toggle("active",item.dataset.category==="all");
       });
@@ -948,7 +1020,8 @@ document.querySelectorAll(".nav-btn").forEach(button=>{
 });
 
 /* ABOUT BACK BUTTON */
-document.getElementById("aboutBackButton").addEventListener("click",returnToHome);
+document.getElementById("aboutBackButton")
+  .addEventListener("click",returnToHome);
 
 /* INITIALIZATION */
 render();
