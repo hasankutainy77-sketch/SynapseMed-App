@@ -16,14 +16,8 @@ const synapseDB = createClient(
             autoRefreshToken: true,
             persistSession: true,
             detectSessionInUrl: true,
-
-            // تثبيت مكان تخزين جلسة المستخدم
             storage: window.localStorage,
-
-            // مفتاح ثابت لحفظ الجلسة
             storageKey: "synapsemed-auth-v1",
-
-            // استخدام آلية تجديد الجلسة الافتراضية
             flowType: "implicit"
         }
     }
@@ -31,38 +25,19 @@ const synapseDB = createClient(
 
 window.synapseDB = synapseDB;
 
-// التحقق من استعادة الجلسة
-synapseDB.auth.getSession()
-    .then(({ data, error }) => {
+/*
+ * لا نستدعي getSession هنا.
+ * مكتبة Supabase تتولى استعادة الجلسة تلقائياً.
+ * هذا يمنع تكرار استعادة الجلسة عند بدء التطبيق.
+ */
 
-        if (error) {
-            console.error(
-                "SynapseMed session error:",
-                error.message
-            );
-            return;
-        }
-
-        if (data.session) {
-            console.log(
-                "SynapseMed: Existing session restored."
-            );
-        } else {
-            console.log(
-                "SynapseMed: No saved session found."
-            );
-        }
-    });
-
-// مراقبة تغيرات المصادقة
-synapseDB.auth.onAuthStateChange(
-    (event, session) => {
-        console.log(
-            "SynapseMed Auth Event:",
-            event
-        );
-    }
-);
+synapseDB.auth.onAuthStateChange((event, session) => {
+    console.log(
+        "SynapseMed Auth Event:",
+        event,
+        session ? "Session available" : "No session"
+    );
+});
 
 console.log(
     "SynapseMed: Supabase initialized successfully."
