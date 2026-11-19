@@ -384,4 +384,582 @@ authTabs.forEach(tab=>{
   });
 });
 
-/* FORM
+/* FORM LOADING */
+function setFormLoading(form,loading){
+  const button=form.querySelector(".auth-submit");
+  button.disabled=loading;
+  button.textContent=loading?"يرجى الانتظار...":
+    (form.id==="loginForm"?"دخول إلى التطبيق":"إنشاء حساب طالب");
+}
+
+/* ENTER APPLICATION */
+function enterApplication(role){
+  document.body.classList.add("authenticated");
+  accountRole.textContent=role==="admin"?"ADMIN":"STUDENT";
+  render();
+  loadPublishedSimulators();
+  if(window.SynapseAdmin) window.SynapseAdmin.refresh();
+}
+
+/* SESSION INITIALIZATION - UPDATED */
+async function initializeAuthentication(){
+  let timeoutId=null;
+  let timedOut=false;
+
+  try{
+    if(!window.SynapseAuth){
+      showAuthMessage(
+        "تعذر تحميل نظام الحسابات. تحقق من الاتصال وأعد المحاولة.",
+        "error"
+      );
+      return;
+    }
+
+    const timeoutPromise=new Promise(resolve=>{
+      timeoutId=setTimeout(()=>{
+        timedOut=true;
+        resolve({timeout:true});
+      },10000);
+    });
+
+    const sessionPromise=window.SynapseAuth.checkSession();
+
+    const result=await Promise.race([
+      sessionPromise,
+      timeoutPromise
+    ]);
+
+    if(result.timeout){
+      console.warn("Session verification timed out.");
+
+      document.body.classList.remove("authenticated");
+
+      showAuthMessage(
+        "تأخر الاتصال بالخادم. يمكنك تسجيل الدخول مجدداً.",
+        "error"
+      );
+
+      return;
+    }
+
+    if(!result.authenticated){
+      document.body.classList.remove("authenticated");
+
+      if(window.SynapseAdmin){
+        window.SynapseAdmin.refresh();
+      }
+
+      return;
+    }
+
+    if(!result.approved){
+      await window.SynapseAuth.logout();
+
+      document.body.classList.remove("authenticated");
+
+      if(window.SynapseAdmin){
+        window.SynapseAdmin.refresh();
+      }
+
+      showAuthMessage(
+        result.status==="rejected"
+          ?"لم تتم الموافقة على حسابك. يرجى التواصل مع الإدارة."
+          :"حسابك بانتظار موافقة الإدارة.",
+        "error"
+      );
+
+      return;
+    }
+
+    enterApplication(result.role);
+
+  }catch(error){
+    console.error("Authentication check failed:",error);
+
+    document.body.classList.remove("authenticated");
+
+    showAuthMessage(
+      "تعذر التحقق من الحساب. يمكنك تسجيل الدخول مجدداً.",
+      "error"
+    );
+
+  }finally{
+    clearTimeout(timeoutId);
+    document.body.classList.remove("auth-checking");
+  }
+}
+
+/* LOGIN */
+loginForm.addEventListener("submit",async event=>{
+  event.preventDefault();
+  clearAuthMessage();
+  setFormLoading(loginForm,true);
+  try{
+    const result=await window.SynapseAuth.login(
+      document.getElementById("loginEmail").value,
+      document.getElementById("loginPassword").value
+    );
+    if(!result.success){
+      if(result.status==="pending"||result.status==="rejected")
+        await window.SynapseAuth.logout();
+      showAuthMessage(result.message,"error");
+      return;
+    }
+    showAuthMessage("تم تسجيل الدخول بنجاح.","success");
+    enterApplication(result.role);
+  }catch(error){
+    console.error(error);
+    showAuthMessage("حدث خطأ أثناء تسجيل الدخول. حاول مجدداً.","error");
+  }finally{
+    setFormLoading(loginForm,false);
+  }
+});
+
+/* REGISTER */
+registerForm.addEventListener("submit",async event=>{
+  event.preventDefault();
+  clearAuthMessage();
+  setFormLoading(registerForm,true);
+  try{
+    const result=await window.SynapseAuth.register(
+      document.getElementById("registerEmail").value,
+      document.getElementById("registerPassword").value,
+      document.getElementById("confirmPassword").value
+    );
+    if(!result.success){
+      showAuthMessage(result.message,"error");
+      return;
+    }
+    if(result.status==="pending"){
+      await window.SynapseAuth.logout();
+      showAuthMessage("تم إنشاء الحساب. حسابك الآن بانتظار موافقة الإدارة.","success");
+    }else{
+      showAuthMessage("تم إنشاء الحساب. تحقق من بريدك الإلكتروني لتأكيده، ثم انتظر موافقة الإدارة.","success");
+    }
+  }catch(error){
+    console.error(error);
+    showAuthMessage("تعذر إنشاء الحساب. حاول مجدداً.","error");
+  }finally{
+    setFormLoading(registerForm,false);
+  }
+});
+
+/* LOGOUT */
+document.getElementById("logoutButton").addEventListener("click",async()=>{
+  const button=document.getElementById("logoutButton");
+  button.disabled=true;
+  try{
+    await window.SynapseAuth.logout();
+    document.body.classList.remove("authenticated");
+    accountRole.textContent="VERSION 1.0";
+    loginForm.reset();
+    registerForm.reset();
+    clearAuthMessage();
+    if(window.SynapseAdmin) window.SynapseAdmin.refresh();
+    window.scrollTo(0,0);
+  }catch(error){
+    console.error(error);
+    alert("تعذر تسجيل الخروج. حاول مجدداً.");
+  }finally{
+    button.disabled=false;
+  }
+});
+
+/* BUILT-IN SIMULATORS */
+const builtInSimulators=[
+  {
+    id:"clinical",
+    title:"الحالة السريرية: ألم البطن",
+    description:"تقييم المريض وتحليل المعطيات والوصول إلى التشخيص.",
+    icon:"🩺",category:"clinical",categoryName:"سريرية",
+    path:"simulators/clinical-sim.html"
+  },
+  {
+    id:"appendectomy",
+    title:"استئصال الزائدة الدودية",
+    description:"محاكاة جراحية تفاعلية ثنائية الأبعاد خطوة بخطوة.",
+    icon:"🏥",category:"surgery",categoryName:"جراحية",
+    path:"simulators/appendectomy-sim.html"
+  },
+  {
+    id:"appendectomy3d",
+    title:"استئصال الزائدة الدودية 3D",
+    description:"استكشاف المحاكاة الجراحية باستخدام العرض ثلاثي الأبعاد.",
+    icon:"🧬",category:"surgery",categoryName:"جراحية",
+    path:"simulators/appendectomy-3d.html"
+  },
+  {
+    id:"pneumothorax",
+    title:"استرواح الصدر الضاغط",
+    description:"التعرّف على الحالة الإسعافية وتدبيرها.",
+    icon:"🫁",category:"emergency",categoryName:"إسعافية",
+    path:"simulators/pneumothorax-sim.html"
+  }
+];
+
+let simulators=[...builtInSimulators];
+let databaseCategories=[];
+let loadingRemoteSimulators=false;
+
+/* DOM ELEMENTS */
+const list=document.getElementById("simulatorList");
+const searchInput=document.getElementById("searchInput");
+const emptyState=document.getElementById("emptyState");
+const totalCount=document.getElementById("totalCount");
+const favoriteCount=document.getElementById("favoriteCount");
+const resultCount=document.getElementById("resultCount");
+const sectionTitle=document.getElementById("sectionTitle");
+const mainPage=document.querySelector("main");
+const aboutPage=document.getElementById("aboutPage");
+
+let activeCategory="all";
+let currentView="home";
+
+/* DYNAMIC CATEGORIES */
+function categoryIcon(icon,fallback){
+  return icon&&String(icon).trim()?String(icon).trim():fallback;
+}
+
+function rebuildCategoryFilters(){
+  const filters=document.getElementById("filters");
+  const selected=activeCategory;
+  filters.replaceChildren();
+
+  const allButton=document.createElement("button");
+  allButton.className="filter-btn";
+  allButton.dataset.category="all";
+  allButton.textContent="الكل";
+  filters.appendChild(allButton);
+
+  const known=[
+    {id:"clinical",name:"سريرية"},
+    {id:"surgery",name:"جراحية"},
+    {id:"emergency",name:"إسعافية"}
+  ];
+  const used=new Set();
+
+  known.forEach(item=>{
+    used.add(item.id);
+    const button=document.createElement("button");
+    button.className="filter-btn";
+    button.dataset.category=item.id;
+    button.textContent=item.name;
+    filters.appendChild(button);
+  });
+
+  databaseCategories.forEach(category=>{
+    const key="cat-"+category.id;
+    if(used.has(key)||!simulators.some(sim=>sim.category===key)) return;
+    const button=document.createElement("button");
+    button.className="filter-btn";
+    button.dataset.category=key;
+    button.textContent=category.name;
+    filters.appendChild(button);
+  });
+
+  const buttons=filters.querySelectorAll(".filter-btn");
+  let selectionExists=false;
+
+  buttons.forEach(button=>{
+    const isSelected=button.dataset.category===selected;
+    button.classList.toggle("active",isSelected);
+    if(isSelected) selectionExists=true;
+
+    button.addEventListener("click",()=>{
+      activeCategory=button.dataset.category;
+      filters.querySelectorAll(".filter-btn").forEach(item=>{
+        item.classList.toggle("active",item===button);
+      });
+      render();
+    });
+  });
+
+  if(!selectionExists){
+    activeCategory="all";
+    allButton.classList.add("active");
+  }
+}
+
+/* LOAD PUBLISHED SIMULATORS */
+async function loadPublishedSimulators(){
+  if(loadingRemoteSimulators) return;
+  if(!window.synapseDB){
+    console.warn("Supabase client is not available; showing built-in simulators only.");
+    return;
+  }
+
+  loadingRemoteSimulators=true;
+  try{
+    const [categoriesResult,simulatorsResult]=await Promise.all([
+      window.synapseDB.from("categories")
+        .select("id,name,icon,sort_order")
+        .order("sort_order",{ascending:true}),
+      window.synapseDB.from("simulators")
+        .select("id,title,description,category_id,file_path,is_published,created_at")
+        .eq("is_published",true)
+        .order("created_at",{ascending:false})
+    ]);
+
+    if(categoriesResult.error) throw categoriesResult.error;
+    if(simulatorsResult.error) throw simulatorsResult.error;
+
+    databaseCategories=categoriesResult.data||[];
+    const categoryMap=new Map(databaseCategories.map(category=>[
+      String(category.id),category
+    ]));
+
+    const remote=(simulatorsResult.data||[])
+      .filter(row=>row&&row.id&&row.title&&row.file_path)
+      .map(row=>{
+        const category=row.category_id
+          ?categoryMap.get(String(row.category_id)):null;
+        const rawPath=String(row.file_path).trim();
+
+        const safePath=/^https:\/\//i.test(rawPath)
+          ?rawPath
+          :(/^(?!\/)(?!.*(?:^|\/)\.\.(?:\/|$))[a-z0-9_./-]+$/i.test(rawPath)
+            ?rawPath:"");
+
+        if(!safePath) return null;
+
+        return {
+          id:"remote-"+row.id,
+          title:row.title,
+          description:row.description||"محاكاة تعليمية تفاعلية.",
+          icon:categoryIcon(category&&category.icon,"🧠"),
+          category:category?"cat-"+category.id:"uncategorized",
+          categoryName:category?category.name:"بدون تصنيف",
+          path:safePath
+        };
+      }).filter(Boolean);
+
+    const builtInPaths=new Set(builtInSimulators.map(item=>item.path));
+    const uniqueRemote=remote.filter(item=>!builtInPaths.has(item.path));
+
+    simulators=[...builtInSimulators,...uniqueRemote];
+    rebuildCategoryFilters();
+    render();
+  }catch(error){
+    console.error("Could not load published simulators:",error);
+    simulators=[...builtInSimulators];
+    databaseCategories=[];
+    rebuildCategoryFilters();
+    render();
+  }finally{
+    loadingRemoteSimulators=false;
+  }
+}
+
+/* FAVORITES */
+function getFavorites(){
+  try{
+    const value=JSON.parse(localStorage.getItem("synapsemed_favorites")||"[]");
+    return Array.isArray(value)?value:[];
+  }catch(error){
+    return [];
+  }
+}
+
+function saveFavorites(favorites){
+  try{
+    localStorage.setItem("synapsemed_favorites",JSON.stringify(favorites));
+  }catch(error){
+    console.warn("Could not save favorites.");
+  }
+}
+
+function toggleFavorite(id){
+  let favorites=getFavorites();
+  if(favorites.includes(id)){
+    favorites=favorites.filter(item=>item!==id);
+  }else{
+    favorites.push(id);
+  }
+  saveFavorites(favorites);
+  render();
+}
+
+/* STATISTICS */
+function updateStats(){
+  totalCount.textContent=simulators.length;
+  favoriteCount.textContent=getFavorites().length;
+}
+
+/* CREATE CARD */
+function createCard(simulator,favorites){
+  const card=document.createElement("article");
+  card.className="sim-card";
+
+  const icon=document.createElement("div");
+  icon.className="sim-icon";
+  icon.textContent=simulator.icon;
+
+  const info=document.createElement("div");
+  info.className="sim-info";
+
+  const title=document.createElement("h3");
+  title.textContent=simulator.title;
+
+  const description=document.createElement("p");
+  description.textContent=simulator.description;
+
+  const tag=document.createElement("span");
+  tag.className="sim-tag";
+  tag.textContent=simulator.categoryName;
+
+  info.append(title,description,tag);
+
+  const actions=document.createElement("div");
+  actions.className="sim-actions";
+
+  const favorite=document.createElement("button");
+  favorite.className="favorite-btn";
+  favorite.type="button";
+  favorite.textContent=favorites.includes(simulator.id)?"★":"☆";
+  favorite.classList.toggle("active",favorites.includes(simulator.id));
+  favorite.setAttribute("aria-label",favorites.includes(simulator.id)?"إزالة من المفضلة":"إضافة إلى المفضلة");
+  favorite.addEventListener("click",()=>toggleFavorite(simulator.id));
+
+  const open=document.createElement("button");
+  open.className="open-btn";
+  open.type="button";
+  open.textContent="ابدأ الآن";
+  open.addEventListener("click",()=>{
+    try{
+      sessionStorage.setItem("synapsemed_return_url",window.location.href);
+    }catch(error){}
+    window.location.href=simulator.path;
+  });
+
+  actions.append(favorite,open);
+  card.append(icon,info,actions);
+  return card;
+}
+
+/* SEARCH NORMALIZATION */
+function normalizeText(value){
+  return value.toLowerCase()
+    .replace(/[أإآ]/g,"ا")
+    .replace(/ة/g,"ه")
+    .replace(/ى/g,"ي")
+    .replace(/[\u064B-\u065F]/g,"")
+    .trim();
+}
+
+/* RENDER */
+function render(){
+  const query=normalizeText(searchInput.value);
+  const favorites=getFavorites();
+
+  const filtered=simulators.filter(simulator=>{
+    const matchesCategory=activeCategory==="all"||simulator.category===activeCategory;
+    const matchesSearch=normalizeText(
+      simulator.title+" "+simulator.description+" "+simulator.categoryName
+    ).includes(query);
+    const matchesView=currentView!=="favorites"||favorites.includes(simulator.id);
+
+    return matchesCategory&&matchesSearch&&matchesView;
+  });
+
+  list.replaceChildren();
+  filtered.forEach(simulator=>list.appendChild(createCard(simulator,favorites)));
+
+  emptyState.style.display=filtered.length===0?"block":"none";
+  resultCount.textContent=filtered.length+" محاكاة";
+  sectionTitle.textContent=currentView==="favorites"?"المحاكاة المفضلة":"المحاكاة المتاحة";
+  updateStats();
+}
+
+/* FILTERS AND SEARCH */
+rebuildCategoryFilters();
+searchInput.addEventListener("input",render);
+
+/* NAVIGATION */
+function updateNavigation(view){
+  document.querySelectorAll(".nav-btn").forEach(item=>{
+    item.classList.toggle("active",item.dataset.view===view);
+  });
+}
+
+function showAboutPage(){
+  currentView="about";
+  mainPage.style.display="none";
+  aboutPage.hidden=false;
+  updateNavigation("about");
+  window.scrollTo(0,0);
+}
+
+function returnToHome(){
+  aboutPage.hidden=true;
+  mainPage.style.display="";
+  currentView="home";
+  activeCategory="all";
+  searchInput.value="";
+
+  document.querySelectorAll(".filter-btn").forEach(item=>{
+    item.classList.toggle("active",item.dataset.category==="all");
+  });
+
+  updateNavigation("home");
+  render();
+  window.scrollTo(0,0);
+}
+
+/* ANDROID HARDWARE BACK BUTTON HANDLER */
+window.handleAndroidBack=function(){
+  if(!document.body.classList.contains("authenticated")){
+    return "exit";
+  }
+
+  if(currentView!=="home"){
+    returnToHome();
+    return "handled";
+  }
+
+  return "exit";
+};
+
+/* BOTTOM NAVIGATION */
+document.querySelectorAll(".nav-btn").forEach(button=>{
+  button.addEventListener("click",()=>{
+    const view=button.dataset.view;
+
+    if(view==="about"){
+      showAboutPage();
+      return;
+    }
+
+    aboutPage.hidden=true;
+    mainPage.style.display="";
+    currentView=view;
+    updateNavigation(view);
+
+    if(currentView==="home"){
+      activeCategory="all";
+      searchInput.value="";
+      document.querySelectorAll(".filter-btn").forEach(item=>{
+        item.classList.toggle("active",item.dataset.category==="all");
+      });
+    }
+
+    render();
+    window.scrollTo(0,0);
+  });
+});
+
+/* ABOUT BACK BUTTON */
+document.getElementById("aboutBackButton").addEventListener("click",returnToHome);
+
+/* INITIALIZATION */
+render();
+initializeAuthentication();
+
+/*
+  ملاحظة:
+  window.handleAndroidBack جاهزة للاستدعاء من Android.
+  ربط زر الرجوع الأصلي في Capacitor يتم في MainActivity
+  أو عبر App plugin، ولا يكفي هذا الملف وحده لتنفيذ ذلك.
+*/
+</script>
+</body>
+</html>
